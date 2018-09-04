@@ -50,13 +50,9 @@ public class MainActivity extends AppCompatActivity {
             }
         });
 
-        btnseguir.setOnClickListener(new View.OnClickListener() {
-
-            @Override
-            public void onClick(View v) {
-                Intent mapa = new Intent(v.getContext(), MapActivity.class);
-                startActivity(mapa);
-            }
-        });
+    }
+    public void showMap (View view){
+        Intent intent = new Intent(this, MapActivity.class);
+        startActivity(intent);
     }
 }

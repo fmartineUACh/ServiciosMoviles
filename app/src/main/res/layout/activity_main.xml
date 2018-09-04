@@ -32,11 +32,14 @@
         android:layout_height="39dp"
         android:layout_marginStart="24dp"
         android:layout_marginTop="8dp"
+        android:onClick="showMap"
         android:text="Seguir"
         app:layout_constrainedHeight="true"
         app:layout_constrainedWidth="true"
+        app:layout_constraintBottom_toBottomOf="@+id/spservice"
         app:layout_constraintStart_toEndOf="@+id/spservice"
-        app:layout_constraintTop_toBottomOf="@+id/textView" />
+        app:layout_constraintTop_toTopOf="@+id/spservice"
+        app:layout_constraintVertical_bias="1.0" />
 
     <EditText
         android:id="@+id/result"

@@ -24,6 +24,7 @@ public class MapActivity extends FragmentActivity implements OnMapReadyCallback 
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
+        
         super.onCreate(savedInstanceState);
         setContentView(R.layout.map_activity);
         // Obtain the SupportMapFragment and get notified when the map is ready to be used.
@@ -34,7 +35,7 @@ public class MapActivity extends FragmentActivity implements OnMapReadyCallback 
 
     @Override
     public void onMapReady(GoogleMap googleMap) {
-        Intent receiveIntent = this.getIntent();
+        //Intent receiveIntent = this.getIntent();
         mMap = googleMap;
         markerPoints.clear();
         mMap.clear();

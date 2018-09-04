@@ -15,7 +15,7 @@
         android:supportsRtl="true"
         android:theme="@style/AppTheme">
         <activity
-            android:name=".MapActivity"
+            android:name=".MainActivity"
             android:label="Inicio"
             android:screenOrientation="portrait">
             <intent-filter>
@@ -25,7 +25,7 @@
             </intent-filter>
         </activity>
         <activity
-            android:name=".MainActivity"
+            android:name=".MapActivity"
             android:label="Mapa"
             android:screenOrientation="portrait" />
     </application>
