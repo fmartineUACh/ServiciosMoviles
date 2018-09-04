@@ -2,6 +2,7 @@ package mx.uach.newcompass3;
 
 import android.content.Intent;
 import android.os.Bundle;
+import android.support.v4.app.Fragment;
 import android.support.v4.app.FragmentActivity;
 
 import com.google.android.gms.maps.GoogleMap;
@@ -24,7 +25,6 @@ public class MapActivity extends FragmentActivity implements OnMapReadyCallback 
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
-        
         super.onCreate(savedInstanceState);
         setContentView(R.layout.map_activity);
         // Obtain the SupportMapFragment and get notified when the map is ready to be used.
