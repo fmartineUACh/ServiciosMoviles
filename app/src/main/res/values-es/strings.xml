@@ -1,0 +1,21 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="app_name">Servicios Móviles</string>
+    <string name="Map">Mapa</string>
+    <string name="SearchHint">Buscar dirección</string>
+
+    <string-array name="slabels">
+        <item>Transporte personal</item>
+        <item>Paquetería</item>
+        <item>Pagar cuentas</item>
+        <item>Apoyo vial</item>
+        <item>Ordenar comida</item>
+    </string-array>
+    <string-array name="svalues">
+        <item>1</item>
+        <item>2</item>
+        <item>3</item>
+        <item>4</item>
+        <item>5</item>
+    </string-array>
+</resources>
