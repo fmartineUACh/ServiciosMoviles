@@ -3,6 +3,9 @@
     <string name="app_name">Mobile Services</string>
     <string name="Map">Map</string>
     <string name="SearchHint">Enter Address</string>
+    <string name="route">Create route to this place</string>
+    <string name="routeError">Error generating routing. Verify that both points are reachable</string>
+    <string name="noRouteData">2 points are necesary to create a route</string>
 
     <string-array name="slabels">
         <item>Personal transport</item>

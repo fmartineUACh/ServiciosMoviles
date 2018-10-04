@@ -3,6 +3,9 @@
     <string name="app_name">Servicios Móviles</string>
     <string name="Map">Mapa</string>
     <string name="SearchHint">Buscar dirección</string>
+    <string name="route">Generar ruta hacia este lugar</string>
+    <string name="routeError">Error al generar enrutamiento. Verifica que ambos puntos sean alcanzables</string>
+    <string name="noRouteData">Es necesario tener 2 puntos para generar una ruta</string>
 
     <string-array name="slabels">
         <item>Transporte personal</item>
