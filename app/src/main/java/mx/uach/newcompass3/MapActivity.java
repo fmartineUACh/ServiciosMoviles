@@ -54,6 +54,9 @@ import com.google.android.gms.maps.model.MarkerOptions;
 import com.google.android.gms.maps.model.PolylineOptions;
 import com.google.android.gms.tasks.OnCompleteListener;
 import com.google.android.gms.tasks.Task;
+import com.google.maps.DirectionsApiRequest;
+import com.google.maps.GeoApiContext;
+import com.google.maps.model.DirectionsResult;
 
 import org.json.JSONObject;
 
@@ -86,6 +89,7 @@ public class MapActivity extends FragmentActivity implements OnMapReadyCallback,
     private static final float DEFAUL_ZOOM = 15f;
     private static final int PLACE_PICCKER_REQUEST = 1;
     private static final LatLngBounds LAT_LNG_BOUNDS = new LatLngBounds(new LatLng(28.555541, -106.187639), new LatLng(28.798408, -105.888866));
+    private static final String MY_API_KEY = "AIzaSyAzID1xgB0hWrsvs2CK_bSOEMOfTcSJt5k";
     //Vars
     private Boolean mLocationPermissionGranted = false;
     private GoogleMap mMap;
@@ -95,6 +99,7 @@ public class MapActivity extends FragmentActivity implements OnMapReadyCallback,
     private PlaceInfo mPlace;
     private Marker mMarker;
     LatLng currentLatLng, destinyLatLng;
+    private GeoApiContext mGeoApiContext = null;
 
     //Widgets
     private AutoCompleteTextView mSearchText;
@@ -414,181 +419,200 @@ public class MapActivity extends FragmentActivity implements OnMapReadyCallback,
         }
     };
     //Métodos de enrutamiento
-//    public void routing(View view){
-//        //Este código debe ir encerrado dentro de condiciones pues debe comportarse distinto según la opción elegida por el usuario en la pantalla anterior
-//        //Comportamiento por defecto: ir de la ubicación actual al punto señalado
-//        Log.d(TAG, "Routing:\ncurrentLatLng: " + currentLatLng + "\ndestinyLatLng: " +destinyLatLng);
-//        if(currentLatLng!=null && destinyLatLng!=null) {
-//            if(currentLatLng != destinyLatLng) {
-//                try {
-//                    String url = getDirectionsUrl(currentLatLng, destinyLatLng);
-//                    DownloadTask downloadTask = new DownloadTask();
-//                    // Start downloading json data from Google Directions API
-//                    downloadTask.execute(url);
-//                } catch (NullPointerException e) {
-//                    Toast.makeText(getApplicationContext(), getString(R.string.routeError), Toast.LENGTH_LONG).show();
-//                    Log.e("routing: Error de enrutamiento: ", e.getMessage(), e);
-//                }
-//            }else{
-//                Log.e(TAG, "Routing: Las coordenadas de origen y destino son iguales. Verifica sus valores.");
-//            }
-//        }else{
-//            Toast.makeText(getApplicationContext(), getString(R.string.noRouteData), Toast.LENGTH_LONG).show();
-//            Log.e(TAG, "Routing: No se tienen coordenadas para enrutamiento.");
-//        }
-//    }
-//
-//    private class DownloadTask extends AsyncTask<String, Void, String> {
-//
-//        @Override
-//        protected String doInBackground(String... url) {
-//
-//            String data = "";
-//
-//            try {
-//                data = downloadUrl(url[0]);
-//            } catch (Exception e) {
-//                Log.d("Background Task", e.toString());
-//            }
-//            return data;
-//        }
-//
-//        @Override
-//        protected void onPostExecute(String result) {
-//            super.onPostExecute(result);
-//
-//            ParserTask parserTask = new ParserTask();
-//
-//
-//            parserTask.execute(result);
-//
-//        }
-//    }
-//
-//
-//    /**
-//     * A class to parse the Google Places in JSON format
-//     */
-//    private class ParserTask extends AsyncTask<String, Integer, List<List<HashMap<String, String>>>> {
-//
-//        // Parsing the data in non-ui thread
-//        @Override
-//        protected List<List<HashMap<String, String>>> doInBackground(String... jsonData) {
-//            JSONObject jObject;
-//            List<List<HashMap<String, String>>> routes = null;
-//
-//            try {
-//                jObject = new JSONObject(jsonData[0]);
-//                DirectionsJSONParser parser = new DirectionsJSONParser();
-//
-//                routes = parser.parse(jObject);
-//            } catch (Exception e) {
-//                e.printStackTrace();
-//            }
-//            return routes;
-//        }
-//
-//        @Override
-//        protected void onPostExecute(List<List<HashMap<String, String>>> result) {
-//            ArrayList points = null;
-//            PolylineOptions lineOptions = null;
-//            MarkerOptions markerOptions = new MarkerOptions();
-//            try {
-//                int cfor;
-//                if(result.size()==0){
-//                    Log.w(TAG, "onPostExcecute: result.size no tiene valor. Se asignará un valor de 1 para el ciclo.");
-//                    cfor = 1;
-//                }else{
-//                    Log.d(TAG, "onPostExcecute: result.size: " + result.size());
-//                    cfor = result.size();
-//                }
-//                for (int i = 0; i < cfor; i++) {
-//                    points = new ArrayList();
-//                    lineOptions = new PolylineOptions();
-//                    Log.d(TAG, "onPostExecute: Objeto lineOptions creado");
-//
-//                    List<HashMap<String, String>> path = result.get(i);
-//
-//                    for (int j = 0; j < path.size(); j++) {
-//                        HashMap<String, String> point = path.get(j);
-//
-//                        double lat = Double.parseDouble(point.get("lat"));
-//                        double lng = Double.parseDouble(point.get("lng"));
-//                        LatLng position = new LatLng(lat, lng);
-//
-//                        points.add(position);
-//                    }
-//
-//                    lineOptions.addAll(points);
-//                    lineOptions.width(12);
-//                    lineOptions.color(Color.BLUE);
-//                    lineOptions.geodesic(true);
-//
-//                }
-//
-//// Drawing polyline in the Google Map for the i-th route
-//                mMap.addPolyline(lineOptions);
-//            } catch (Exception e) {
-//                Toast.makeText(getApplicationContext(), "Error al generar enrutamiento. Verifica que ambos puntos sean alcanzables",  Toast.LENGTH_LONG).show();
-//                Log.e("Background Task", e.toString());
-//            }
-//        }
-//    }
-//    private String getDirectionsUrl(LatLng origin, LatLng dest) {
-//
-//        // Origin of route
-//        String str_origin = "origin=" + origin.latitude + "," + origin.longitude;
-//
-//        // Destination of route
-//        String str_dest = "destination=" + dest.latitude + "," + dest.longitude;
-//
-//        // Sensor enabled
-//        String sensor = "sensor=false";
-//        String mode = "mode=driving";
-//        // Building the parameters to the web service
-//        String parameters = str_origin + "&" + str_dest + "&" + sensor + "&" + mode;
-//
-//        // Output format
-//        String output = "json";
-//
-//        // Building the url to the web service
-//        String url = "https://maps.googleapis.com/maps/api/directions/" + output + "?" + parameters;
-//
-//
-//        return url;
-//    }
-//    private String downloadUrl(String strUrl) throws IOException {
-//        String data = "";
-//        InputStream iStream = null;
-//        HttpURLConnection urlConnection = null;
-//        try {
-//            URL url = new URL(strUrl);
-//
-//            urlConnection = (HttpURLConnection) url.openConnection();
-//
-//            urlConnection.connect();
-//
-//            iStream = urlConnection.getInputStream();
-//
-//            BufferedReader br = new BufferedReader(new InputStreamReader(iStream));
-//
-//            StringBuffer sb = new StringBuffer();
-//
-//            String line = "";
-//            while ((line = br.readLine()) != null) {
-//                sb.append(line);
-//            }
-//
-//            data = sb.toString();
-//
-//            br.close();
-//
-//        } catch (Exception e) {
-//            Log.d("Exception", e.toString());
-//        } finally {
-//            iStream.close();
-//            urlConnection.disconnect();
-//        }
-//        return data;
-//    }
+    public void routing(View view){
+        //Este código debe ir encerrado dentro de condiciones pues debe comportarse distinto según la opción elegida por el usuario en la pantalla anterior
+        //Comportamiento por defecto: ir de la ubicación actual al punto señalado
+        Log.d(TAG, "Routing:\ncurrentLatLng: " + currentLatLng + "\ndestinyLatLng: " +destinyLatLng);
+        if(currentLatLng!=null && destinyLatLng!=null) {
+            if(currentLatLng != destinyLatLng) {
+                try {
+                    String url = getDirectionsUrl(currentLatLng, destinyLatLng);
+                    Log.i(TAG, "Routing: Obteniendo url de dirección.\ncurrentLatLng: " + currentLatLng + "\ndestinyLatLng: " + destinyLatLng + "\nurl: " + url);
+                    DownloadTask downloadTask = new DownloadTask();
+                    if(downloadTask != null){
+                        Log.i(TAG, "Routing: Objeto downloadTask creado con éxito");
+                    }else{
+                        Log.e(TAG, "Routing: Error al crear el objeto downloadTask");
+                    }
+                    // Start downloading json data from Google Directions API
+                    downloadTask.execute(url);
+                    Log.i(TAG, "Routing: Descarga de datos Json realizada con éxito");
+                } catch (NullPointerException e) {
+                    Toast.makeText(getApplicationContext(), getString(R.string.routeError), Toast.LENGTH_LONG).show();
+                    Log.e(TAG, "routing: Error de enrutamiento: " + e.getMessage(), e);
+                }
+            }else{
+                Log.e(TAG, "Routing: Las coordenadas de origen y destino son iguales. Verifica sus valores.");
+            }
+        }else{
+            Toast.makeText(getApplicationContext(), getString(R.string.noRouteData), Toast.LENGTH_LONG).show();
+            Log.e(TAG, "Routing: No se tienen coordenadas para enrutamiento.");
+        }
+    }
+
+    private class DownloadTask extends AsyncTask<String, Void, String> {
+
+        @Override
+        protected String doInBackground(String... url) {
+
+            String data = "";
+
+            try {
+                data = downloadUrl(url[0]);
+            } catch (Exception e) {
+                Log.d("Background Task", e.toString());
+            }
+            return data;
+        }
+
+        @Override
+        protected void onPostExecute(String result) {
+            Log.i(TAG, "DownloadTask: onPostExecute: result: " + result);
+            super.onPostExecute(result);
+
+            ParserTask parserTask = new ParserTask();
+
+
+            parserTask.execute(result);
+
+        }
+    }
+
+
+    /**
+     * A class to parse the Google Places in JSON format
+     */
+    private class ParserTask extends AsyncTask<String, Integer, List<List<HashMap<String, String>>>> {
+
+        // Parsing the data in non-ui thread
+        @Override
+        protected List<List<HashMap<String, String>>> doInBackground(String... jsonData) {
+            JSONObject jObject;
+            List<List<HashMap<String, String>>> routes = null;
+
+            try {
+                jObject = new JSONObject(jsonData[0]);
+                DirectionsJSONParser parser = new DirectionsJSONParser();
+
+                routes = parser.parse(jObject);
+            } catch (Exception e) {
+                e.printStackTrace();
+            }
+            return routes;
+        }
+
+        @Override
+        protected void onPostExecute(List<List<HashMap<String, String>>> result) {
+            Log.i(TAG, "onPostExecute: Result: " + result);
+            ArrayList<LatLng> points = new ArrayList<LatLng>();
+            PolylineOptions lineOptions = new PolylineOptions();
+            lineOptions.width(2);
+            lineOptions.color(Color.BLUE);
+            MarkerOptions markerOptions = new MarkerOptions();
+            try {
+                int cfor;
+                if(result.size()==0){
+                    Log.w(TAG, "onPostExecute: result.size no tiene valor. Se asignará un valor de 1 para el ciclo.");
+                    cfor = 1;
+                }else{
+                    Log.d(TAG, "onPostExecute: result.size: " + result.size());
+                    cfor = result.size();
+                }
+                Log.i(TAG, "onPostExecute: Entrando a ciclo For con cfor = " + cfor);
+                for (int i = 0; i < cfor; i++) {
+                    Log.i(TAG, "onPostExecute: Ciclo For iniciado");
+                    points = new ArrayList();
+                    Log.i(TAG, "onPostExecute: Objeto points creado");
+                    if (lineOptions == null) {
+                        lineOptions = new PolylineOptions();
+                        Log.d(TAG, "onPostExecute: Objeto lineOptions creado");
+                    }else{
+                        Log.i(TAG, "onPostExecute: El objeto lineOptions ya había sido creado previamente");
+                    }
+
+                    List<HashMap<String, String>> path = result.get(i);
+                    Log.i(TAG, "onPostExecute: Entrando a ciclo For con path.size = " + path.size());
+                    for (int j = 0; j < path.size(); j++) {
+                        Log.i(TAG, "onPostExecute: Ciclo For iniciado");
+                        HashMap<String, String> point = path.get(j);
+
+                        double lat = Double.parseDouble(point.get("lat"));
+                        double lng = Double.parseDouble(point.get("lng"));
+                        LatLng position = new LatLng(lat, lng);
+
+                        points.add(position);
+                    }
+
+                    lineOptions.addAll(points);
+                    lineOptions.width(12);
+                    lineOptions.color(Color.BLUE);
+                    lineOptions.geodesic(true);
+
+                }
+
+// Drawing polyline in the Google Map for the i-th route
+                mMap.addPolyline(lineOptions);
+            } catch (Exception e) {
+                Toast.makeText(getApplicationContext(), "Error al generar enrutamiento. Verifica que ambos puntos sean alcanzables",  Toast.LENGTH_LONG).show();
+                Log.e("Background Task", e.toString());
+            }
+        }
+    }
+    private String getDirectionsUrl(LatLng origin, LatLng dest) {
+
+        // Origin of route
+        String str_origin = "origin=" + origin.latitude + "," + origin.longitude;
+
+        // Destination of route
+        String str_dest = "destination=" + dest.latitude + "," + dest.longitude;
+
+        // Sensor enabled
+        String sensor = "sensor=false";
+        String mode = "mode=driving";
+        // Building the parameters to the web service
+        String parameters = str_origin + "&" + str_dest + "&" + sensor + "&" + mode;
+
+        // Output format
+        String output = "json";
+
+        // Building the url to the web service
+        String url = "https://maps.googleapis.com/maps/api/directions/" + output + "?" + parameters + "&key=" + MY_API_KEY;
+
+
+        return url;
+    }
+    private String downloadUrl(String strUrl) throws IOException {
+        String data = "";
+        InputStream iStream = null;
+        HttpURLConnection urlConnection = null;
+        try {
+            URL url = new URL(strUrl);
+
+            urlConnection = (HttpURLConnection) url.openConnection();
+
+            urlConnection.connect();
+
+            iStream = urlConnection.getInputStream();
+
+            BufferedReader br = new BufferedReader(new InputStreamReader(iStream));
+
+            StringBuffer sb = new StringBuffer();
+
+            String line = "";
+            while ((line = br.readLine()) != null) {
+                sb.append(line);
+            }
+
+            data = sb.toString();
+
+            br.close();
+
+        } catch (Exception e) {
+            Log.d("Exception", e.toString());
+        } finally {
+            iStream.close();
+            urlConnection.disconnect();
+        }
+        return data;
+    }
 }
