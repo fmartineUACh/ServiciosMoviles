@@ -6,6 +6,9 @@
     <string name="route">Generar ruta hacia este lugar</string>
     <string name="routeError">Error al generar enrutamiento. Verifica que ambos puntos sean alcanzables</string>
     <string name="noRouteData">Es necesario tener 2 puntos para generar una ruta</string>
+    <string name="next">Siguiente</string>
+    <string name="choseService">Elija su servicio:</string>
+    <string name="serviceOptions">¿En qué podemos ayudarle?</string>
 
     <string-array name="slabels">
         <item>Transporte personal</item>
@@ -13,12 +16,5 @@
         <item>Pagar cuentas</item>
         <item>Apoyo vial</item>
         <item>Ordenar comida</item>
-    </string-array>
-    <string-array name="svalues">
-        <item>1</item>
-        <item>2</item>
-        <item>3</item>
-        <item>4</item>
-        <item>5</item>
     </string-array>
 </resources>

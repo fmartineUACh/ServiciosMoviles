@@ -100,6 +100,7 @@ public class MapActivity extends FragmentActivity implements OnMapReadyCallback,
     private Marker mMarker;
     LatLng currentLatLng, destinyLatLng;
     private GeoApiContext mGeoApiContext = null;
+    private int spOption;
 
     //Widgets
     private AutoCompleteTextView mSearchText;
@@ -227,7 +228,8 @@ public class MapActivity extends FragmentActivity implements OnMapReadyCallback,
     @Override
     public void onMapReady(GoogleMap googleMap) {
         Toast.makeText(this, "Mapa listo", Toast.LENGTH_SHORT).show();
-        //Intent receiveIntent = this.getIntent();
+        Intent receiveIntent = getIntent();
+        spOption = receiveIntent.getIntExtra("spOption", 0);
         mMap = googleMap;
         markerPoints.clear();
         mMap.clear();
@@ -422,31 +424,35 @@ public class MapActivity extends FragmentActivity implements OnMapReadyCallback,
     public void routing(View view){
         //Este código debe ir encerrado dentro de condiciones pues debe comportarse distinto según la opción elegida por el usuario en la pantalla anterior
         //Comportamiento por defecto: ir de la ubicación actual al punto señalado
-        Log.d(TAG, "Routing:\ncurrentLatLng: " + currentLatLng + "\ndestinyLatLng: " +destinyLatLng);
-        if(currentLatLng!=null && destinyLatLng!=null) {
-            if(currentLatLng != destinyLatLng) {
-                try {
-                    String url = getDirectionsUrl(currentLatLng, destinyLatLng);
-                    Log.i(TAG, "Routing: Obteniendo url de dirección.\ncurrentLatLng: " + currentLatLng + "\ndestinyLatLng: " + destinyLatLng + "\nurl: " + url);
-                    DownloadTask downloadTask = new DownloadTask();
-                    if(downloadTask != null){
-                        Log.i(TAG, "Routing: Objeto downloadTask creado con éxito");
+        switch (spOption){
+            case 0:
+                Log.d(TAG, "Routing:\ncurrentLatLng: " + currentLatLng + "\ndestinyLatLng: " +destinyLatLng);
+                if(currentLatLng!=null && destinyLatLng!=null) {
+                    if(currentLatLng != destinyLatLng) {
+                        try {
+                            String url = getDirectionsUrl(currentLatLng, destinyLatLng);
+                            Log.i(TAG, "Routing: Obteniendo url de dirección.\ncurrentLatLng: " + currentLatLng + "\ndestinyLatLng: " + destinyLatLng + "\nurl: " + url);
+                            DownloadTask downloadTask = new DownloadTask();
+                            if(downloadTask != null){
+                                Log.i(TAG, "Routing: Objeto downloadTask creado con éxito");
+                            }else{
+                                Log.e(TAG, "Routing: Error al crear el objeto downloadTask");
+                            }
+                            // Start downloading json data from Google Directions API
+                            downloadTask.execute(url);
+                            Log.i(TAG, "Routing: Descarga de datos Json realizada con éxito");
+                        } catch (NullPointerException e) {
+                            Toast.makeText(getApplicationContext(), getString(R.string.routeError), Toast.LENGTH_LONG).show();
+                            Log.e(TAG, "routing: Error de enrutamiento: " + e.getMessage(), e);
+                        }
                     }else{
-                        Log.e(TAG, "Routing: Error al crear el objeto downloadTask");
+                        Log.e(TAG, "Routing: Las coordenadas de origen y destino son iguales. Verifica sus valores.");
                     }
-                    // Start downloading json data from Google Directions API
-                    downloadTask.execute(url);
-                    Log.i(TAG, "Routing: Descarga de datos Json realizada con éxito");
-                } catch (NullPointerException e) {
-                    Toast.makeText(getApplicationContext(), getString(R.string.routeError), Toast.LENGTH_LONG).show();
-                    Log.e(TAG, "routing: Error de enrutamiento: " + e.getMessage(), e);
+                }else{
+                    Toast.makeText(getApplicationContext(), getString(R.string.noRouteData), Toast.LENGTH_LONG).show();
+                    Log.e(TAG, "Routing: No se tienen coordenadas para enrutamiento.");
                 }
-            }else{
-                Log.e(TAG, "Routing: Las coordenadas de origen y destino son iguales. Verifica sus valores.");
-            }
-        }else{
-            Toast.makeText(getApplicationContext(), getString(R.string.noRouteData), Toast.LENGTH_LONG).show();
-            Log.e(TAG, "Routing: No se tienen coordenadas para enrutamiento.");
+                break;
         }
     }
 

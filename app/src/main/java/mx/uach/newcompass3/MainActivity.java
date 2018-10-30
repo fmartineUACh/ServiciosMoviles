@@ -15,46 +15,67 @@ import android.widget.EditText;
 import android.widget.Spinner;
 import android.widget.Toast;
 
-public class MainActivity extends AppCompatActivity {
-    Button btnseguir;
+public class MainActivity extends AppCompatActivity implements AdapterView.OnItemSelectedListener {
+    private Button btnseguir;
+    private EditText result;
+    private int spOption;
+    //Layouts
+    private ConstraintLayout clapoyo, clcuentas;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_main);
-        final EditText result = (EditText) findViewById(R.id.result);
-        result.setEnabled(false);
-        final ConstraintLayout clapoyo = (ConstraintLayout) findViewById(R.id.clapoyo);
-
         final Spinner spservice = (Spinner) findViewById(R.id.spservice);
         // Create an ArrayAdapter using the string array and a default spinner layout
         ArrayAdapter<CharSequence> adapter = ArrayAdapter.createFromResource(this, R.array.slabels, android.R.layout.simple_spinner_item);
+
         // Specify the layout to use when the list of choices appears
         adapter.setDropDownViewResource(android.R.layout.simple_spinner_dropdown_item);
         // Apply the adapter to the spinner
         spservice.setAdapter(adapter);
-        btnseguir = (Button) findViewById(R.id.btnseguir);
+        btnseguir = findViewById(R.id.btnseguir);
         btnseguir.setEnabled(false);
-
-        spservice.setOnItemSelectedListener(new AdapterView.OnItemSelectedListener() {
-            public void onItemSelected(AdapterView<?> parent, View view, int pos, long id) {
-                String service = spservice.getSelectedItem().toString();
-                result.setText(service);
-
-                clapoyo.setVisibility(View.GONE);
-
-                if (service.equals("Apoyo vial")){
-                    clapoyo.setVisibility(View.VISIBLE);
-                }
-                btnseguir.setEnabled(true);
-            }
-            public void onNothingSelected(AdapterView<?> parent) {
-            }
-        });
+        result = findViewById(R.id.result);
+        result.setEnabled(false);
+        spservice.setOnItemSelectedListener(this);
+        //Menús
+        clapoyo = findViewById(R.id.clapoyo);
+        clcuentas = findViewById(R.id.clcuentas);
     }
 
     public void showMap (View view){
         Intent intent = new Intent(this, MapActivity.class);
+        intent.putExtra("spOption", spOption);
         startActivity(intent);
+    }
+
+    @Override
+    public void onItemSelected(AdapterView<?> parent, View view, int position, long id) {
+        String item = parent.getItemAtPosition(position).toString();
+        spOption = position;
+        clapoyo.setVisibility(View.GONE);
+        clcuentas.setVisibility(View.GONE);
+        //Opciones de spinner
+        switch (position){
+            case 0:
+                break;
+            case 1:
+                break;
+            case 2:
+                break;
+            case 3:
+                clapoyo.setVisibility(View.VISIBLE);
+                break;
+            case 4:
+                break;
+        }
+        result.setText(item);
+        btnseguir.setEnabled(true);
+    }
+
+    @Override
+    public void onNothingSelected(AdapterView<?> parent) {
+
     }
 }

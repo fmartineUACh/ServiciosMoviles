@@ -6,6 +6,16 @@
     <string name="route">Create route to this place</string>
     <string name="routeError">Error generating routing. Verify that both points are reachable</string>
     <string name="noRouteData">2 points are necesary to create a route</string>
+    <string name="next">Next</string>
+    <string name="choseService">Chose your service:</string>
+    <string name="serviceOptions">How can we help you?</string>
+
+    <!--Services-->
+    <string name="rsDeflatedTire">Deflated Tire</string>
+    <string name="rsNoGas">No Gas</string>
+    <string name="rsLeak">Water/Oil Leak</string>
+    <string name="rsBrakeFail">Brakes Failure</string>
+    <string name="rsBattery">Dead Battery</string>
 
     <string-array name="slabels">
         <item>Personal transport</item>
@@ -13,12 +23,5 @@
         <item>Pay bills</item>
         <item>Road support</item>
         <item>Order food</item>
-    </string-array>
-    <string-array name="svalues">
-        <item>1</item>
-        <item>2</item>
-        <item>3</item>
-        <item>4</item>
-        <item>5</item>
     </string-array>
 </resources>
