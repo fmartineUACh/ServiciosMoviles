@@ -41,17 +41,21 @@
         app:layout_constraintTop_toTopOf="@+id/spservice"
         app:layout_constraintVertical_bias="1.0" />
 
-    <EditText
-        android:id="@+id/result"
-        android:layout_width="199dp"
-        android:layout_height="wrap_content"
-        android:layout_marginBottom="16dp"
-        android:layout_marginStart="16dp"
+    <TextView
+        android:id="@+id/help"
+        android:layout_width="366dp"
+        android:layout_height="100dp"
+        android:layout_marginBottom="10dp"
+        android:layout_marginEnd="10dp"
+        android:layout_marginStart="10dp"
         android:ems="10"
         android:inputType="textPersonName"
-        android:text="Prueba de resultado"
+        android:maxLines="4"
+        android:text="Help"
         app:layout_constraintBottom_toBottomOf="parent"
-        app:layout_constraintStart_toStartOf="parent" />
+        app:layout_constraintEnd_toEndOf="parent"
+        app:layout_constraintStart_toStartOf="parent"
+        app:layout_goneMarginEnd="10dp" />
 
     <android.support.constraint.ConstraintLayout
         android:id="@+id/clapoyo"
@@ -123,7 +127,7 @@
             app:layout_constraintTop_toBottomOf="@+id/chbfreno" />
     </android.support.constraint.ConstraintLayout>
     <android.support.constraint.ConstraintLayout
-        android:id="@+id/clcuentas"
+        android:id="@+id/clpaq"
         android:layout_width="368dp"
         android:layout_height="352dp"
         android:layout_marginEnd="8dp"
@@ -135,24 +139,40 @@
         app:layout_constraintStart_toStartOf="parent"
         app:layout_constraintTop_toTopOf="parent">
         <TextView
-            android:id="@+id/lbcuentas"
+            android:id="@+id/lbpaq"
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
             android:layout_marginStart="8dp"
             android:layout_marginTop="8dp"
-            android:text="@string/serviceOptions"
+            android:text="@string/psLabel"
             app:layout_constraintStart_toStartOf="parent"
             app:layout_constraintTop_toTopOf="parent" />
 
-        <RadioButton
-            android:id="@+id/radioButton"
-            android:layout_width="wrap_content"
+        <RadioGroup
+            android:id="@+id/psRadioGroup"
+            android:layout_width="match_parent"
             android:layout_height="wrap_content"
-            android:layout_marginStart="8dp"
-            android:layout_marginTop="24dp"
-            android:text="RadioButton"
-            app:layout_constraintStart_toStartOf="parent"
-            app:layout_constraintTop_toBottomOf="@+id/lbcuentas" />
+            app:layout_constraintTop_toBottomOf="@+id/lbpaq">
+            <RadioButton
+                android:id="@+id/fromCurrent"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:layout_marginStart="8dp"
+                android:layout_marginTop="14dp"
+                android:text="@string/psFromCurrent"
+                app:layout_constraintStart_toStartOf="parent"
+                android:onClick="onRadioButtonClicked"/>
+            <RadioButton
+                android:id="@+id/fromMarker"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:layout_marginStart="8dp"
+                android:layout_marginTop="14dp"
+                android:text="@string/psFromMarker"
+                app:layout_constraintStart_toStartOf="parent"
+                app:layout_constraintTop_toBottomOf="@+id/fromCurrent"
+                android:onClick="onRadioButtonClicked"/>
+        </RadioGroup>
 
     </android.support.constraint.ConstraintLayout>
 </android.support.constraint.ConstraintLayout>

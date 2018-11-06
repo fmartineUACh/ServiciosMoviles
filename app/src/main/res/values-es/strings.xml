@@ -9,6 +9,9 @@
     <string name="next">Siguiente</string>
     <string name="choseService">Elija su servicio:</string>
     <string name="serviceOptions">¿En qué podemos ayudarle?</string>
+    <string name="currentSet">Ubicación actual asignada como origen</string>
+    <string name="originSet">Marcador asignado como origen</string>
+    <string name="originSetError">Error asignando marcador como origen. Verifique que existe un marcador</string>
 
     <string-array name="slabels">
         <item>Transporte personal</item>
@@ -17,4 +20,20 @@
         <item>Apoyo vial</item>
         <item>Ordenar comida</item>
     </string-array>
+
+    <!--Services-->
+    <!--Parcel Service-->
+    <string name="psLabel">Elija la modalidad de su envío</string>
+    <string name="psHelp">Elija la forma en la que desea que se realice el envío de su paquete</string>
+    <string name="ps1Help">El envío se realizará desde su ubicación actual o un origen personalizado hasta el marcador establecido en el mapa.</string>
+    <string name="ps2Help">El paquete será enviado desde el marcador en el mapa hasta su ubicación actual.</string>
+    <string name="psFromCurrent">Desde la ubicación actual o una especificada previamente a un marcador en el mapa</string>
+    <string name="psFromMarker">Desde marcador en el mapa a la ubicación actual</string>
+    <!--Road support-->
+    <string name="rsHelp">Elija que tipo de ayuda necesita.</string>
+    <string name="rsDeflatedTire">Neumático ponchado</string>
+    <string name="rsNoGas">Sin combustible</string>
+    <string name="rsLeak">Fuga de agua o aceite</string>
+    <string name="rsBrakeFail">Fallo de frenos</string>
+    <string name="rsBattery">Batería muerta</string>
 </resources>

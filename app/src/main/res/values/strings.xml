@@ -9,19 +9,32 @@
     <string name="next">Next</string>
     <string name="choseService">Chose your service:</string>
     <string name="serviceOptions">How can we help you?</string>
+    <string name="currentSet">Current location set as Origin</string>
+    <string name="originSet">Marker set as Origin</string>
+    <string name="originSetError">Error setting marker as origin. Verify that a marker exists</string>
+
+    <string-array name="slabels">
+        <item>Personal transport</item>
+        <item>Parcel Service</item>
+        <item>Pay bills</item>
+        <item>Road support</item>
+        <item>Order food</item>
+    </string-array>
 
     <!--Services-->
+    <!--Parcel Service-->
+    <string name="psLabel">Choose the mode of your shipment</string>
+    <string name="psHelp">Choose the way you want your package to be shipped</string>
+    <string name="ps1Help">The shipment will be made from your current location or a custom origin to the marker set on the map.</string>
+    <string name="ps2Help">The package will be sent from the marker on the map to your current location.</string>
+    <string name="psFromCurrent">From current or custom location to marker on map</string>
+    <string name="psFromMarker">From marker on map to current location</string>
+    <!--Road support-->
+    <string name="rsHelp">Choose what kind of help you need.</string>
     <string name="rsDeflatedTire">Deflated Tire</string>
     <string name="rsNoGas">No Gas</string>
     <string name="rsLeak">Water/Oil Leak</string>
     <string name="rsBrakeFail">Brakes Failure</string>
     <string name="rsBattery">Dead Battery</string>
 
-    <string-array name="slabels">
-        <item>Personal transport</item>
-        <item>Parcel</item>
-        <item>Pay bills</item>
-        <item>Road support</item>
-        <item>Order food</item>
-    </string-array>
 </resources>

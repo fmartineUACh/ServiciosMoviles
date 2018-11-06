@@ -85,15 +85,24 @@
         android:layout_marginTop="15dp"
         android:scaleType="centerCrop"
         android:src="@drawable/ic_info" />
+
     <ImageView
         android:id="@+id/ic_direction"
         android:layout_width="40dp"
         android:layout_height="40dp"
+        android:layout_alignStart="@+id/ic_add_origin"
         android:layout_below="@+id/place_info"
-        android:layout_alignStart="@+id/place_info"
-        android:src="@drawable/ic_routing"
-        android:layout_marginTop="15dp"
+        android:layout_marginTop="17dp"
+        android:onClick="routingSet"
         android:scaleType="centerCrop"
-        android:onClick="routing"/>
+        android:src="@drawable/ic_routing" />
+    <ImageView
+        android:id="@+id/ic_add_origin"
+        android:layout_width="40dp"
+        android:layout_height="40dp"
+        android:layout_below="@+id/ic_direction"
+        android:layout_alignStart="@id/place_info"
+        android:layout_marginTop="15dp"
+        android:src="@drawable/ic_origin"/>
 
 </RelativeLayout>
