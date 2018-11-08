@@ -11,6 +11,7 @@ import android.view.View;
 import android.widget.AdapterView;
 import android.widget.ArrayAdapter;
 import android.widget.Button;
+import android.widget.CheckBox;
 import android.widget.EditText;
 import android.widget.RadioButton;
 import android.widget.RadioGroup;
@@ -23,7 +24,10 @@ public class MainActivity extends AppCompatActivity implements AdapterView.OnIte
     private TextView help;
     private int spOption, travelWay = 0;
     //Layouts
-    private ConstraintLayout clpaq, clapoyo, clcuentas;
+    private ConstraintLayout clpaq, clapoyo, clfood;
+    private RadioButton fromCurrent, fromMarker;
+    private CheckBox chFlatTire, chGas, chLeak, chBrake, chBatery;
+    private EditText ofOrder;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -45,12 +49,30 @@ public class MainActivity extends AppCompatActivity implements AdapterView.OnIte
         //Menús
         clapoyo = findViewById(R.id.clapoyo);
         clpaq = findViewById(R.id.clpaq);
+        clfood = findViewById(R.id.clfood);
+        fromCurrent = findViewById(R.id.fromCurrent);
+        fromMarker = findViewById(R.id.fromMarker);
+        chBatery = findViewById(R.id.chbbateria);
+        chBrake = findViewById(R.id.chbfreno);
+        chLeak = findViewById(R.id.chbfuga);
+        chGas = findViewById(R.id.chbgas);
+        chFlatTire = findViewById(R.id.chbponche);
+        ofOrder = findViewById(R.id.ofOrder);
+
     }
 
     public void showMap (View view){
         Intent intent = new Intent(this, MapActivity.class);
         intent.putExtra("spOption", spOption);
         intent.putExtra("travelWay", travelWay);
+        //Servicios viales
+        intent.putExtra("rsBatery", chBatery.isChecked());
+        intent.putExtra("rsBrake", chBrake.isChecked());
+        intent.putExtra("rsLeak", chLeak.isChecked());
+        intent.putExtra("rsGas", chGas.isChecked());
+        intent.putExtra("rsFlatTire", chFlatTire.isChecked());
+        //Orden de comida
+        intent.putExtra("foodOrder", ofOrder.getText());
         startActivity(intent);
     }
 
@@ -60,23 +82,40 @@ public class MainActivity extends AppCompatActivity implements AdapterView.OnIte
         spOption = position;
         clpaq.setVisibility(View.GONE);
         clapoyo.setVisibility(View.GONE);
+        clfood.setVisibility(View.GONE);
         help.setText(item);
         //clcuentas.setVisibility(View.GONE);
         //Opciones de spinner
         switch (position){
             case 0:
+                travelWay = 0;
+                help.setText(R.string.ptHelp);
                 break;
             case 1:
                 clpaq.setVisibility(View.VISIBLE);
+                if(fromCurrent.isChecked()){
+                    travelWay = 0;
+                }else if (fromMarker.isChecked()){
+                    travelWay = 1;
+                }else{
+                    fromCurrent.setChecked(true);
+                    travelWay = 0;
+                }
                 help.setText(R.string.psHelp);
                 break;
             case 2:
+                travelWay = 0;
+                help.setText(R.string.pbHelp);
                 break;
             case 3:
+                travelWay = 0;
                 clapoyo.setVisibility(View.VISIBLE);
                 help.setText(R.string.rsHelp);
                 break;
             case 4:
+                travelWay = 1;
+                clfood.setVisibility(View.VISIBLE);
+                help.setText(R.string.ofHelp);
                 break;
         }
         btnseguir.setEnabled(true);

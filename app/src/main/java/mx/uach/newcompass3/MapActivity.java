@@ -100,7 +100,7 @@ public class MapActivity extends FragmentActivity implements OnMapReadyCallback,
     private GoogleApiClient mGoogleApiClient;
     private PlaceInfo mPlace;
     private Marker mMarker;
-    LatLng currentLatLng, originLatLng, destinyLatLng;
+    LatLng currentLatLng, originLatLng, destinationLatLng;
     private GeoApiContext mGeoApiContext = null;
     private int spOption, travelWay;
 
@@ -182,11 +182,15 @@ public class MapActivity extends FragmentActivity implements OnMapReadyCallback,
             @Override
             public void onClick(View v) {
                 Log.d(TAG, "Asignando origen distinto a la ubicación actual");
-                if(destinyLatLng != null) {
-                    originLatLng = destinyLatLng;
-                    Toast.makeText(MapActivity.this, R.string.originSet, Toast.LENGTH_SHORT).show();
+                if(destinationLatLng != null) {
+                    originLatLng = destinationLatLng;
+                    if(travelWay == 0) {
+                        Toast.makeText(MapActivity.this, R.string.originSet, Toast.LENGTH_SHORT).show();
+                    }else{
+                        Toast.makeText(MapActivity.this, R.string.destinationSet, Toast.LENGTH_SHORT).show();
+                    }
                 }else{
-                    Toast.makeText(MapActivity.this, R.string.originSetError, Toast.LENGTH_SHORT).show();
+                    Toast.makeText(MapActivity.this, R.string.locationSetError, Toast.LENGTH_SHORT).show();
                 }
             }
         });
@@ -249,7 +253,7 @@ public class MapActivity extends FragmentActivity implements OnMapReadyCallback,
         Intent receiveIntent = getIntent();
         spOption = receiveIntent.getIntExtra("spOption", 0);
         travelWay = receiveIntent.getIntExtra("travelWay", 0);
-        if(travelWay == 1){
+        if(spOption == 1 && travelWay == 1){
             mAdd.setVisibility(View.GONE);
         }
         mMap = googleMap;
@@ -323,8 +327,8 @@ public class MapActivity extends FragmentActivity implements OnMapReadyCallback,
             mMap.addMarker(new MarkerOptions().position(latLng));
         }
         if(originLatLng != latLng) {
-            destinyLatLng = latLng;
-            Log.d(TAG, "moveCamera: Valor asigando a destinyLatLng: " + destinyLatLng);
+            destinationLatLng = latLng;
+            Log.d(TAG, "moveCamera: Valor asigando a destinationLatLng: " + destinationLatLng);
         }else{
             Log.w(TAG, "moveCamera: Se ha intentado asignar el valor de origen al destino, pero ha sido evitado.");
         }
@@ -342,8 +346,8 @@ public class MapActivity extends FragmentActivity implements OnMapReadyCallback,
             mMap.addMarker(options);
         }
         if(originLatLng != latLng) {
-            destinyLatLng = latLng;
-            Log.d(TAG, "moveCamera: Valor asigando a destinyLatLng: " + destinyLatLng);
+            destinationLatLng = latLng;
+            Log.d(TAG, "moveCamera: Valor asigando a destinationLatLng: " + destinationLatLng);
         }else{
             Log.w(TAG, "moveCamera: Se ha intentado asignar el valor de origen al destino, pero ha sido evitado.");
         }
@@ -450,23 +454,23 @@ public class MapActivity extends FragmentActivity implements OnMapReadyCallback,
     public void routingSet(View view){
         Log.d(TAG, "routingSet: Preparando enrutamiento");
         if(travelWay == 0){
-            Log.d(TAG, "routingSet: Enviando enrutameinto estándar\noriginLatLng: " + originLatLng + "\ndestinyLatLng: " + destinyLatLng);
-            routing(view, originLatLng, destinyLatLng);
+            Log.d(TAG, "routingSet: Enviando enrutameinto estándar\noriginLatLng: " + originLatLng + "\ndestinationLatLng: " + destinationLatLng);
+            routing(view, originLatLng, destinationLatLng);
         }else{
-            Log.d(TAG, "routingSet: Enviando enrutameinto invertido\noriginLatLng: " + originLatLng + "\ndestinyLatLng: " + destinyLatLng);
-            routing(view, destinyLatLng, originLatLng);
+            Log.d(TAG, "routingSet: Enviando enrutameinto invertido\noriginLatLng: " + destinationLatLng + "\ndestinationLatLng: " + originLatLng);
+            routing(view, destinationLatLng, originLatLng);
         }
         Log.d(TAG, "routingSet: Enrutamiento enviado");
     }
     //Ejecutando enrutamiento
-    public void routing(View view, LatLng origin, LatLng destiny){
+    public void routing(View view, LatLng origin, LatLng destination){
         mMap.clear();
         //Ajuste de marcadores y cámara
         Marker marker;
         LatLngBounds.Builder builder = new LatLngBounds.Builder();
         marker = mMap.addMarker(new MarkerOptions().position(origin).title("Origin").icon(BitmapDescriptorFactory.defaultMarker(BitmapDescriptorFactory.HUE_AZURE)));
         builder.include(marker.getPosition());
-        marker = mMap.addMarker(new MarkerOptions().position(destiny).title("Destiny"));
+        marker = mMap.addMarker(new MarkerOptions().position(destination).title("destination"));
         builder.include(marker.getPosition());
         LatLngBounds bounds = builder.build();
         int padding = 200; // offset from edges of the map in pixels
@@ -475,12 +479,12 @@ public class MapActivity extends FragmentActivity implements OnMapReadyCallback,
         mMap.animateCamera(cu);
         //Este código debe ir encerrado dentro de condiciones pues debe comportarse distinto según la opción elegida por el usuario en la pantalla anterior
         //Comportamiento por defecto: ir de la ubicación actual al punto señalado
-        Log.d(TAG, "Routing:\norigin: " + origin + "\ndestiny: " +destiny);
-        if(origin!=null && destiny!=null) {
-            if(origin != destiny) {
+        Log.d(TAG, "Routing:\norigin: " + origin + "\ndestination: " +destination);
+        if(origin!=null && destination!=null) {
+            if(origin != destination) {
                 try {
-                    String url = getDirectionsUrl(origin, destiny);
-                    Log.i(TAG, "Routing: Obteniendo url de dirección.\norigin: " + origin + "\ndestiny: " + destiny + "\nurl: " + url);
+                    String url = getDirectionsUrl(origin, destination);
+                    Log.i(TAG, "Routing: Obteniendo url de dirección.\norigin: " + origin + "\ndestination: " + destination + "\nurl: " + url);
                     DownloadTask downloadTask = new DownloadTask();
                     if(downloadTask != null){
                         Log.i(TAG, "Routing: Objeto downloadTask creado con éxito");

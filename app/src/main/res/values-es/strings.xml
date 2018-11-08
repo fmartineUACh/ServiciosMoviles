@@ -11,6 +11,7 @@
     <string name="serviceOptions">¿En qué podemos ayudarle?</string>
     <string name="currentSet">Ubicación actual asignada como origen</string>
     <string name="originSet">Marcador asignado como origen</string>
+    <string name="destinationSet">Marcador asignado como destino</string>
     <string name="originSetError">Error asignando marcador como origen. Verifique que existe un marcador</string>
 
     <string-array name="slabels">
@@ -22,6 +23,8 @@
     </string-array>
 
     <!--Services-->
+    <!--Personal Transport-->
+    <string name="ptHelp">Ordena un transporte personal seleccionando tu destino. Por defecto el viaje se origina en tu ubicación actual, pero puedes elegir un origen distinto.</string>
     <!--Parcel Service-->
     <string name="psLabel">Elija la modalidad de su envío</string>
     <string name="psHelp">Elija la forma en la que desea que se realice el envío de su paquete</string>
@@ -29,6 +32,8 @@
     <string name="ps2Help">El paquete será enviado desde el marcador en el mapa hasta su ubicación actual.</string>
     <string name="psFromCurrent">Desde la ubicación actual o una especificada previamente a un marcador en el mapa</string>
     <string name="psFromMarker">Desde marcador en el mapa a la ubicación actual</string>
+    <!--Pay Bills-->
+    <string name="pbHelp">Ordena el pago de un servicio. Selecciona el lugar donde tu pago debe ser realizado. Por defecto la cuenta es recibida en tu posición actual pero puedes elergir otra ubicación de origen.</string>
     <!--Road support-->
     <string name="rsHelp">Elija que tipo de ayuda necesita.</string>
     <string name="rsDeflatedTire">Neumático ponchado</string>
@@ -36,4 +41,7 @@
     <string name="rsLeak">Fuga de agua o aceite</string>
     <string name="rsBrakeFail">Fallo de frenos</string>
     <string name="rsBattery">Batería muerta</string>
+    <!--OrderFood-->
+    <string name="ofLabel">Por favor haga su pedido.</string>
+    <string name="ofHelp">Recibe comida seleccionando el restaurante donde deseas ordenar. Por defecto tu orden se entrega en tu ubicación actual, pero puedes elegir un lugar distinto para entregar tu orden.</string>
 </resources>
