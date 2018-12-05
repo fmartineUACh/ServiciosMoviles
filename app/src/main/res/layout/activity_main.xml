@@ -10,7 +10,7 @@
         android:id="@+id/textView"
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
-        android:layout_marginStart="16dp"
+        android:layout_marginStart="10dp"
         android:layout_marginTop="16dp"
         android:text="@string/choseService"
         app:layout_constraintStart_toStartOf="parent"
@@ -20,7 +20,7 @@
         android:id="@+id/spservice"
         android:layout_width="211dp"
         android:layout_height="39dp"
-        android:layout_marginStart="16dp"
+        android:layout_marginStart="10dp"
         android:layout_marginTop="8dp"
         android:entries="@array/slabels"
         app:layout_constraintStart_toStartOf="parent"
@@ -30,7 +30,7 @@
         android:id="@+id/btnseguir"
         android:layout_width="115dp"
         android:layout_height="39dp"
-        android:layout_marginStart="24dp"
+        android:layout_marginStart="12dp"
         android:layout_marginTop="8dp"
         android:onClick="showMap"
         android:text="@string/next"
@@ -43,27 +43,31 @@
 
     <TextView
         android:id="@+id/help"
-        android:layout_width="350dp"
-        android:layout_height="100dp"
-        android:layout_marginBottom="10dp"
-        android:layout_marginStart="20dp"
+        android:layout_width="0dp"
+        android:layout_height="wrap_content"
+        android:layout_marginBottom="16dp"
+        android:layout_marginEnd="10dp"
+        android:layout_marginStart="10dp"
         android:ems="10"
+        android:inputType="none"
         android:maxLines="4"
         android:text="Help"
-        android:inputType="textMultiLine"
         app:layout_constraintBottom_toBottomOf="parent"
         app:layout_constraintEnd_toEndOf="parent"
+        app:layout_constraintHorizontal_bias="0.291"
         app:layout_constraintStart_toStartOf="parent"
         app:layout_goneMarginEnd="10dp" />
 
     <android.support.constraint.ConstraintLayout
         android:id="@+id/clapoyo"
-        android:layout_width="350dp"
+        android:layout_width="0dp"
         android:layout_height="352dp"
+        android:layout_marginEnd="10dp"
+        android:layout_marginStart="10dp"
         android:layout_marginTop="8dp"
         android:visibility="gone"
         app:layout_constraintEnd_toEndOf="parent"
-        app:layout_constraintHorizontal_bias="1.0"
+        app:layout_constraintHorizontal_bias="0.111"
         app:layout_constraintStart_toStartOf="parent"
         app:layout_constraintTop_toBottomOf="@+id/spservice">
 
@@ -126,12 +130,14 @@
 
     <android.support.constraint.ConstraintLayout
         android:id="@+id/clpaq"
-        android:layout_width="350dp"
+        android:layout_width="0dp"
         android:layout_height="352dp"
+        android:layout_marginEnd="10dp"
+        android:layout_marginStart="10dp"
         android:layout_marginTop="8dp"
         android:visibility="gone"
         app:layout_constraintEnd_toEndOf="parent"
-        app:layout_constraintHorizontal_bias="1.0"
+        app:layout_constraintHorizontal_bias="0.055"
         app:layout_constraintStart_toStartOf="parent"
         app:layout_constraintTop_toBottomOf="@+id/spservice">
 
@@ -173,16 +179,20 @@
                 app:layout_constraintTop_toBottomOf="@+id/fromCurrent" />
         </RadioGroup>
     </android.support.constraint.ConstraintLayout>
+
     <android.support.constraint.ConstraintLayout
         android:id="@+id/clfood"
-        android:layout_width="350dp"
+        android:layout_width="0dp"
         android:layout_height="352dp"
+        android:layout_marginEnd="10dp"
+        android:layout_marginStart="10dp"
         android:layout_marginTop="8dp"
-        android:visibility="visible"
+        android:visibility="gone"
         app:layout_constraintEnd_toEndOf="parent"
-        app:layout_constraintHorizontal_bias="1.0"
+        app:layout_constraintHorizontal_bias="0.277"
         app:layout_constraintStart_toStartOf="parent"
         app:layout_constraintTop_toBottomOf="@+id/spservice">
+
         <TextView
             android:id="@+id/lbfood"
             android:layout_width="wrap_content"

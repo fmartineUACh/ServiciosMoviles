@@ -100,13 +100,13 @@ public class MapActivity extends FragmentActivity implements OnMapReadyCallback,
     private GoogleApiClient mGoogleApiClient;
     private PlaceInfo mPlace;
     private Marker mMarker;
-    LatLng currentLatLng, originLatLng, destinationLatLng;
+    private LatLng currentLatLng, originLatLng, destinationLatLng;
     private GeoApiContext mGeoApiContext = null;
     private int spOption, travelWay;
 
     //Widgets
     private AutoCompleteTextView mSearchText;
-    private ImageView mGps, mInfo, mPlacePicker, mClear, mAdd;
+    private ImageView mGps, mInfo, mPlacePicker, mClear, mAdd, mRouting;
     ArrayList markerPoints = new ArrayList();
 
     @Override
@@ -124,6 +124,7 @@ public class MapActivity extends FragmentActivity implements OnMapReadyCallback,
         mPlacePicker = findViewById(R.id.place_picker);
         mClear = findViewById(R.id.ic_clear);
         mAdd = findViewById(R.id.ic_add_origin);
+        mRouting = findViewById(R.id.ic_direction);
         getLocationPermission();
     }
 
@@ -162,7 +163,8 @@ public class MapActivity extends FragmentActivity implements OnMapReadyCallback,
                 } catch (GooglePlayServicesRepairableException e) {
                     Log.e(TAG, "onClick: GooglePlayServicesRepairableException: " + e.getMessage());
                 } catch (GooglePlayServicesNotAvailableException e) {
-                    e.printStackTrace();Log.e(TAG, "onClick: GooglePlayServicesNotAvailableException: " + e.getMessage());
+                    e.printStackTrace();
+                    Log.e(TAG, "onClick: GooglePlayServicesNotAvailableException: " + e.getMessage());
                 }
             }
         });
@@ -210,6 +212,20 @@ public class MapActivity extends FragmentActivity implements OnMapReadyCallback,
                 }catch (NullPointerException e){
                     Log.e(TAG, "onClick: NullPointerException: " + e.getMessage());
                 }
+            }
+        });
+        mRouting.setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View v) {
+                Log.d(TAG, "onCLick: Preparando enrutamiento");
+                if(travelWay == 0){
+                    Log.d(TAG, "onCLick: Enviando enrutameinto estándar\noriginLatLng: " + originLatLng + "\ndestinationLatLng: " + destinationLatLng);
+                    routing(v, originLatLng, destinationLatLng);
+                }else{
+                    Log.d(TAG, "onCLick: Enviando enrutameinto invertido\noriginLatLng: " + destinationLatLng + "\ndestinationLatLng: " + originLatLng);
+                    routing(v, destinationLatLng, originLatLng);
+                }
+                Log.d(TAG, "onCLick: Enrutamiento enviado");
             }
         });
     }
@@ -450,50 +466,33 @@ public class MapActivity extends FragmentActivity implements OnMapReadyCallback,
     };
 
     //Métodos de enrutamiento
-    //Preparando enrutamiento
-    public void routingSet(View view){
-        Log.d(TAG, "routingSet: Preparando enrutamiento");
-        if(travelWay == 0){
-            Log.d(TAG, "routingSet: Enviando enrutameinto estándar\noriginLatLng: " + originLatLng + "\ndestinationLatLng: " + destinationLatLng);
-            routing(view, originLatLng, destinationLatLng);
-        }else{
-            Log.d(TAG, "routingSet: Enviando enrutameinto invertido\noriginLatLng: " + destinationLatLng + "\ndestinationLatLng: " + originLatLng);
-            routing(view, destinationLatLng, originLatLng);
-        }
-        Log.d(TAG, "routingSet: Enrutamiento enviado");
-    }
     //Ejecutando enrutamiento
     public void routing(View view, LatLng origin, LatLng destination){
-        mMap.clear();
-        //Ajuste de marcadores y cámara
-        Marker marker;
-        LatLngBounds.Builder builder = new LatLngBounds.Builder();
-        marker = mMap.addMarker(new MarkerOptions().position(origin).title("Origin").icon(BitmapDescriptorFactory.defaultMarker(BitmapDescriptorFactory.HUE_AZURE)));
-        builder.include(marker.getPosition());
-        marker = mMap.addMarker(new MarkerOptions().position(destination).title("destination"));
-        builder.include(marker.getPosition());
-        LatLngBounds bounds = builder.build();
-        int padding = 200; // offset from edges of the map in pixels
-        CameraUpdate cu = CameraUpdateFactory.newLatLngBounds(bounds, padding);
-        hideSoftKeyboard();
-        mMap.animateCamera(cu);
         //Este código debe ir encerrado dentro de condiciones pues debe comportarse distinto según la opción elegida por el usuario en la pantalla anterior
         //Comportamiento por defecto: ir de la ubicación actual al punto señalado
         Log.d(TAG, "Routing:\norigin: " + origin + "\ndestination: " +destination);
         if(origin!=null && destination!=null) {
             if(origin != destination) {
+                //Ajuste de marcadores y cámara
+                mMap.clear();
+                Marker marker;
+                LatLngBounds.Builder builder = new LatLngBounds.Builder();
+                marker = mMap.addMarker(new MarkerOptions().position(origin).title("Origin").icon(BitmapDescriptorFactory.defaultMarker(BitmapDescriptorFactory.HUE_AZURE)));
+                builder.include(marker.getPosition());
+                marker = mMap.addMarker(new MarkerOptions().position(destination).title("destination"));
+                builder.include(marker.getPosition());
+                LatLngBounds bounds = builder.build();
+                int padding = 200; // offset from edges of the map in pixels
+                CameraUpdate cu = CameraUpdateFactory.newLatLngBounds(bounds, padding);
+                hideSoftKeyboard();
+                mMap.animateCamera(cu);
                 try {
                     String url = getDirectionsUrl(origin, destination);
-                    Log.i(TAG, "Routing: Obteniendo url de dirección.\norigin: " + origin + "\ndestination: " + destination + "\nurl: " + url);
+                    Log.d(TAG, "Routing: Obteniendo url de dirección.\norigin: " + origin + "\ndestination: " + destination + "\nurl: " + url);
                     DownloadTask downloadTask = new DownloadTask();
-                    if(downloadTask != null){
-                        Log.i(TAG, "Routing: Objeto downloadTask creado con éxito");
-                    }else{
-                        Log.e(TAG, "Routing: Error al crear el objeto downloadTask");
-                    }
                     // Start downloading json data from Google Directions API
                     downloadTask.execute(url);
-                    Log.i(TAG, "Routing: Descarga de datos Json realizada con éxito");
+                    Log.d(TAG, "Routing: Descarga de datos Json realizada con éxito");
                 } catch (NullPointerException e) {
                     Toast.makeText(getApplicationContext(), getString(R.string.routeError), Toast.LENGTH_LONG).show();
                     Log.e(TAG, "routing: Error de enrutamiento: " + e.getMessage(), e);
@@ -524,7 +523,7 @@ public class MapActivity extends FragmentActivity implements OnMapReadyCallback,
 
         @Override
         protected void onPostExecute(String result) {
-            Log.i(TAG, "DownloadTask: onPostExecute: result: " + result);
+            Log.d(TAG, "DownloadTask: onPostExecute: result: " + result);
             super.onPostExecute(result);
 
             ParserTask parserTask = new ParserTask();
@@ -560,12 +559,12 @@ public class MapActivity extends FragmentActivity implements OnMapReadyCallback,
 
         @Override
         protected void onPostExecute(List<List<HashMap<String, String>>> result) {
-            Log.i(TAG, "onPostExecute: Result: " + result);
-            ArrayList<LatLng> points = new ArrayList<LatLng>();
+            Log.d(TAG, "ParseTask: onPostExecute: Result: " + result);
+            ArrayList<LatLng> points;
             PolylineOptions lineOptions = new PolylineOptions();
             lineOptions.width(2);
             lineOptions.color(Color.BLUE);
-            MarkerOptions markerOptions = new MarkerOptions();
+            //MarkerOptions markerOptions = new MarkerOptions();
             try {
                 int cfor;
                 if(result.size()==0){
@@ -575,22 +574,22 @@ public class MapActivity extends FragmentActivity implements OnMapReadyCallback,
                     Log.d(TAG, "onPostExecute: result.size: " + result.size());
                     cfor = result.size();
                 }
-                Log.i(TAG, "onPostExecute: Entrando a ciclo For con cfor = " + cfor);
+                Log.d(TAG, "onPostExecute: Entrando a ciclo For con cfor = " + cfor);
                 for (int i = 0; i < cfor; i++) {
-                    Log.i(TAG, "onPostExecute: Ciclo For iniciado");
+                    Log.d(TAG, "onPostExecute: Ciclo For iniciado");
                     points = new ArrayList();
-                    Log.i(TAG, "onPostExecute: Objeto points creado");
+                    Log.d(TAG, "onPostExecute: Objeto points creado");
                     if (lineOptions == null) {
                         lineOptions = new PolylineOptions();
                         Log.d(TAG, "onPostExecute: Objeto lineOptions creado");
                     }else{
-                        Log.i(TAG, "onPostExecute: El objeto lineOptions ya había sido creado previamente");
+                        Log.d(TAG, "onPostExecute: El objeto lineOptions ya había sido creado previamente");
                     }
 
                     List<HashMap<String, String>> path = result.get(i);
-                    Log.i(TAG, "onPostExecute: Entrando a ciclo For con path.size = " + path.size());
+                    Log.d(TAG, "onPostExecute: Entrando a ciclo For con path.size = " + path.size());
                     for (int j = 0; j < path.size(); j++) {
-                        Log.i(TAG, "onPostExecute: Ciclo For iniciado");
+                        Log.d(TAG, "onPostExecute: Ciclo For iniciado");
                         HashMap<String, String> point = path.get(j);
 
                         double lat = Double.parseDouble(point.get("lat"));
