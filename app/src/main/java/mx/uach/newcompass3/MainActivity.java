@@ -75,6 +75,10 @@ public class MainActivity extends AppCompatActivity implements AdapterView.OnIte
         intent.putExtra("foodOrder", ofOrder.getText());
         startActivity(intent);
     }
+    public void showProv (View view){
+        Intent intent = new Intent(this, ProviderMap.class);
+        startActivity(intent);
+    }
 
     @Override
     public void onItemSelected(AdapterView<?> parent, View view, int position, long id) {
