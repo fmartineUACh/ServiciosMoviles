@@ -91,7 +91,7 @@ public class MapActivity extends FragmentActivity implements OnMapReadyCallback,
     private static final float DEFAUL_ZOOM = 15f;
     private static final int PLACE_PICCKER_REQUEST = 1;
     private static final LatLngBounds LAT_LNG_BOUNDS = new LatLngBounds(new LatLng(28.555541, -106.187639), new LatLng(28.798408, -105.888866));
-    private static final String MY_API_KEY = "AIzaSyAzID1xgB0hWrsvs2CK_bSOEMOfTcSJt5k";
+    private static final String MY_API_KEY = BuildConfig.ApiKey;
     //Vars
     private Boolean mLocationPermissionGranted = false;
     private GoogleMap mMap;
