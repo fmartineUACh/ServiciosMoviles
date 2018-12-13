@@ -1,8 +1,11 @@
+import com.google.gms.googleservices.GoogleServicesPlugin
+
 apply plugin: 'com.android.application'
 
 android {
     compileSdkVersion 26
     defaultConfig {
+        multiDexEnabled true
         applicationId "mx.uach.NewCompass3"
         minSdkVersion 19
         targetSdkVersion 26
@@ -29,19 +32,21 @@ repositories {
 dependencies {
     implementation fileTree(dir: 'libs', include: ['*.jar'])
     implementation 'com.android.support:appcompat-v7:26.1.0'
-    compile 'com.android.support:support-annotations:27.1.1'
-    implementation 'com.android.support.constraint:constraint-layout:1.1.2'
-    implementation 'com.google.firebase:firebase-core:11.0.4'
-    implementation 'com.google.firebase:firebase-database:11.0.4'
+    implementation 'com.android.support:support-annotations:28.0.0'
+    implementation 'com.android.support.constraint:constraint-layout:1.1.3'
     testImplementation 'junit:junit:4.12'
     androidTestImplementation 'com.android.support.test:runner:1.0.2'
     androidTestImplementation 'com.android.support.test.espresso:espresso-core:3.0.2'
-    implementation 'com.google.android.gms:play-services-maps:11.0.4'
-    implementation "com.google.android.gms:play-services-location:11.0.4"
-    implementation 'com.google.android.gms:play-services-places:11.0.4'
+    implementation 'com.google.firebase:firebase-core:16.0.6'
+    implementation 'com.google.firebase:firebase-database:16.0.5'
+    implementation 'com.google.firebase:firebase-analytics:16.0.6'
+    implementation 'com.google.android.gms:play-services-maps:16.0.0'
+    implementation "com.google.android.gms:play-services-location:16.0.0"
+    implementation 'com.google.android.gms:play-services-places:16.0.0'
     implementation 'com.google.maps:google-maps-services:0.2.11'
     implementation 'org.slf4j:slf4j-nop:1.7.25'
 }
 
 
 apply plugin: 'com.google.gms.google-services'
+GoogleServicesPlugin.config.disableVersionCheck = true

@@ -56,6 +56,8 @@ import com.google.android.gms.maps.model.MarkerOptions;
 import com.google.android.gms.maps.model.PolylineOptions;
 import com.google.android.gms.tasks.OnCompleteListener;
 import com.google.android.gms.tasks.Task;
+import com.google.firebase.database.DatabaseReference;
+import com.google.firebase.database.FirebaseDatabase;
 import com.google.maps.DirectionsApiRequest;
 import com.google.maps.GeoApiContext;
 import com.google.maps.model.DirectionsResult;
@@ -74,9 +76,6 @@ import java.util.HashMap;
 import java.util.List;
 
 import mx.uach.newcompass3.models.PlaceInfo;
-
-import static mx.uach.newcompass3.R.layout.activity_main;
-import static mx.uach.newcompass3.R.layout.map_activity;
 
 /**
  * Created by Alt on 23/08/2018.
@@ -103,11 +102,13 @@ public class MapActivity extends FragmentActivity implements OnMapReadyCallback,
     private LatLng currentLatLng, originLatLng, destinationLatLng;
     private GeoApiContext mGeoApiContext = null;
     private int spOption, travelWay;
-
     //Widgets
     private AutoCompleteTextView mSearchText;
     private ImageView mGps, mInfo, mPlacePicker, mClear, mAdd, mRouting;
     ArrayList markerPoints = new ArrayList();
+    //Base de datos
+    private DatabaseReference mDatabase = FirebaseDatabase.getInstance().getReference();
+    private DatabaseReference mRootChild = mDatabase.child("puntos");
 
     @Override
     public void onConnectionFailed(@NonNull ConnectionResult connectionResult) {

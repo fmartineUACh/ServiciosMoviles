@@ -12,7 +12,7 @@
     <string name="currentSet">Ubicación actual asignada como origen</string>
     <string name="originSet">Marcador asignado como origen</string>
     <string name="destinationSet">Marcador asignado como destino</string>
-    <string name="originSetError">Error asignando marcador como origen. Verifique que existe un marcador</string>
+    <string name="locationSetError">Error asignando marcador como origen. Verifique que existe un marcador</string>
 
     <string-array name="slabels">
         <item>Transporte personal</item>
@@ -44,4 +44,5 @@
     <!--OrderFood-->
     <string name="ofLabel">Por favor haga su pedido.</string>
     <string name="ofHelp">Recibe comida seleccionando el restaurante donde deseas ordenar. Por defecto tu orden se entrega en tu ubicación actual, pero puedes elegir un lugar distinto para entregar tu orden.</string>
+    <string name="btn_accept">Aceptar solicitud</string>
 </resources>
