@@ -84,7 +84,7 @@ public class ProviderMap extends FragmentActivity implements OnMapReadyCallback,
     private Marker mMarker;
     private LatLng currentLatLng, originLatLng, destinationLatLng;
     private GeoApiContext mGeoApiContext = null;
-    private List<ActiveService> activos = new ArrayList<ActiveService>();
+    private List<ActiveService> serviciosActivos = new ArrayList<ActiveService>();
     private ActiveService activo;
     //Widgets
     private ImageView mGps;
@@ -93,6 +93,8 @@ public class ProviderMap extends FragmentActivity implements OnMapReadyCallback,
     private ListView listView;
     private DrawerLayout drawerLayout;
     private FirebaseDatabase database;
+    private ArrayAdapter<String> adaptador = null;
+    private ArrayList servicesKeys = new ArrayList();
 
 
     @Override
@@ -102,11 +104,9 @@ public class ProviderMap extends FragmentActivity implements OnMapReadyCallback,
         mGps = findViewById(R.id.ic_gps);
         btnAccept = findViewById(R.id.btn_accept);
         getLocationPermission();
-
+        adaptador = new ArrayAdapter<>(this, android.R.layout.simple_list_item_1, android.R.id.text1);
         listView = findViewById(R.id.list_view);
         drawerLayout = findViewById(R.id.drawer_layout);
-        final ArrayAdapter<String> adaptador;
-        adaptador = new ArrayAdapter<>(this, android.R.layout.simple_list_item_1, android.R.id.text1);
         listView.setAdapter(adaptador);
         Log.d(TAG, "onCreate: Lista creada");
 
@@ -114,7 +114,7 @@ public class ProviderMap extends FragmentActivity implements OnMapReadyCallback,
 
             @Override
             public void onItemClick(AdapterView<?> arg0, View arg1, int arg2, long arg3) {
-                activo = activos.get(arg2);
+                activo = serviciosActivos.get(arg2);
                 String[] label;
                 label = getResources().getStringArray(R.array.slabels);
                 Toast.makeText(ProviderMap.this, "Item: " + label[activo.getService()], Toast.LENGTH_SHORT).show();
@@ -137,44 +137,91 @@ public class ProviderMap extends FragmentActivity implements OnMapReadyCallback,
         serviceRef.addChildEventListener(new ChildEventListener() {
             @Override
             public void onChildAdded(@NonNull DataSnapshot dataSnapshot, String s) {
-                Log.d(TAG, "ChildEventListener: Hijo creado: " + dataSnapshot);
+                Log.d(TAG, "onChildAdded: Hijo a crear: " + dataSnapshot);
                 ActiveService servicio = dataSnapshot.getValue(ActiveService.class);
                 assert servicio != null;
-                Log.d(TAG, "ChildEventListener:\nServicio: " + servicio.getService() + "\n¿Atendiendo? " + servicio.getAttending()
+                Log.d(TAG, "onChildAdded:\nServicio: " + servicio.getService() + "\n¿Atendiendo? " + servicio.getAttending()
                         + "\nOrigen: " + servicio.getOriginlat() + ", " + servicio.getOriginlon()
                         + "\nDestino: " + servicio.getDestinitylat() + ", " + servicio.getDestinitylon());
                 if (servicio.getAttending() == 0) {
-                    Log.d(TAG, "ChildernEventListener: Añadiendo objeto: " + servicio);
-                    activos.add(servicio);
-                    String[] label;
-                    label = getResources().getStringArray(R.array.slabels);
-                    adaptador.add(label[servicio.getService()]);
-                    Log.d(TAG, "ChildernEventListener: Objeo añadido a la lista.");
+                    Log.d(TAG, "onChildAdded: Añadiendo objeto: " + servicio);
+                    serviciosActivos.add(servicio);
+                    servicesKeys.add(dataSnapshot.getKey());
+                    updateAdapter();
+                    Log.d(TAG, "onChildAdded: Objeo añadido a la lista.");
                 } else {
-                    Log.d(TAG, "ChildernEventListener: El objeto tiene la propiedad Attending como verdadera y no ha sido añadido a la lista.");
+                    Log.d(TAG, "onChildAdded: El objeto tiene la propiedad Attending como verdadera y no ha sido añadido a la lista.");
                 }
             }
 
             @Override
             public void onChildChanged(@NonNull DataSnapshot dataSnapshot, String s) {
-                Log.d(TAG, "ChildEventListener: Hijo modificado: " + dataSnapshot);
+                Log.d(TAG, "onChildChanged: Hijo a modificar: " + dataSnapshot);
+                ActiveService servicio = dataSnapshot.getValue(ActiveService.class);
+                assert servicio != null;
+                Log.d(TAG, "onChildChanged:\nServicio: " + servicio.getService() + "\n¿Atendiendo? " + servicio.getAttending()
+                        + "\nOrigen: " + servicio.getOriginlat() + ", " + servicio.getOriginlon()
+                        + "\nDestino: " + servicio.getDestinitylat() + ", " + servicio.getDestinitylon());
+                Log.d(TAG, "onChildChanged: Modificando objeto: " + servicio);
+                int index = servicesKeys.indexOf(dataSnapshot.getKey());
+                Log.d(TAG, "onChildChanged: Índice de elemento a modificar: " + index);
+                if (index == -1){
+                    Log.d(TAG, "onChildChanged: Elemento que vuelve a ser activo. Trasladando a onChildAdded");
+                    onChildAdded(dataSnapshot, s);
+                }else if(index >= 0){
+                    if (servicio.getAttending() == 0) {
+                        serviciosActivos.set(index, servicio);
+                        Log.d(TAG, "onChildChanged: Objeto modificado en la lista.");
+                    } else {
+                        serviciosActivos.remove(index);
+                        servicesKeys.remove(index);
+                        Log.d(TAG, "onChildChanged: El objeto tiene la propiedad Attending como verdadera y ha sido retirado de la lista.");
+                    }
+                    updateAdapter();
+                }else{
+                    Log.e(TAG, "onChildChanged: Error, número de lista incorrecto.");
+                }
             }
 
             @Override
             public void onChildRemoved(@NonNull DataSnapshot dataSnapshot) {
-                Log.d(TAG, "ChildEventListener: Hijo eliminado: " + dataSnapshot);
+                Log.d(TAG, "onChildRemoved: Hijo a eliminar: " + dataSnapshot);
+                ActiveService servicio = dataSnapshot.getValue(ActiveService.class);
+                assert servicio != null;
+                Log.d(TAG, "onChildRemoved:\nServicio: " + servicio.getService() + "\n¿Atendiendo? " + servicio.getAttending()
+                        + "\nOrigen: " + servicio.getOriginlat() + ", " + servicio.getOriginlon()
+                        + "\nDestino: " + servicio.getDestinitylat() + ", " + servicio.getDestinitylon());
+                Log.d(TAG, "onChildRemoved: eliminando objeto: " + servicio);
+                int index = servicesKeys.indexOf(dataSnapshot.getKey());
+                Log.d(TAG, "onChildRemoved: Índice de elemento a eliminar: " + index);
+                serviciosActivos.remove(index);
+                servicesKeys.remove(index);
+                updateAdapter();
             }
 
             @Override
             public void onChildMoved(@NonNull DataSnapshot dataSnapshot, String s) {
-                Log.d(TAG, "ChildEventListener: Hijo movido: " + dataSnapshot);
+                Log.d(TAG, "onChildMoved: Hijo a mover: " + dataSnapshot);
+
             }
 
             @Override
             public void onCancelled(@NonNull DatabaseError databaseError) {
-                Log.e(TAG, "ChildEventListener: ERROR: " + databaseError.getMessage());
+                Log.e(TAG, "onCancelled: ERROR: " + databaseError.getMessage());
             }
         });
+    }
+
+    private void updateAdapter(){
+        String[] label = getResources().getStringArray(R.array.slabels);
+        adaptador.clear();
+        Log.d(TAG, "updateAdapter: Actualizando adaptador.");
+        int i = 0;
+        for(ActiveService elemento : serviciosActivos){
+            adaptador.add(label[elemento.getService()] + "\n" + servicesKeys.get(i));
+            Log.d(TAG, "updateAdapter: " + label[elemento.getService()]);
+            i++;
+        }
     }
 
     //Implementación de mapa
