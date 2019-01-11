@@ -11,6 +11,8 @@ public class ActiveService {
     double originlon;
     double destinitylat;
     double destinitylon;
+    float distance;
+    String distUnit;
 
     public ActiveService() {
     }
@@ -71,4 +73,12 @@ public class ActiveService {
     public void setDestinitylon(double destinitylon) {
         this.destinitylon = destinitylon;
     }
+
+    public float getDistance() {return distance;}
+
+    public void setDistance(float distance) { this.distance = distance; }
+
+    public String getDistUnit() {return distUnit;}
+
+    public void setDistUnit(String distUnit) { this.distUnit = distUnit; }
 }

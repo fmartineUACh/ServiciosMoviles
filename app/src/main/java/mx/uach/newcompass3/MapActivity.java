@@ -7,6 +7,8 @@ import android.graphics.Color;
 import android.location.Address;
 import android.location.Geocoder;
 import android.location.Location;
+import android.location.LocationListener;
+import android.location.LocationManager;
 import android.os.AsyncTask;
 import android.os.Bundle;
 import android.support.annotation.NonNull;
@@ -36,6 +38,9 @@ import com.google.android.gms.common.api.GoogleApiClient;
 import com.google.android.gms.common.api.PendingResult;
 import com.google.android.gms.common.api.ResultCallback;
 import com.google.android.gms.location.FusedLocationProviderClient;
+import com.google.android.gms.location.LocationCallback;
+import com.google.android.gms.location.LocationRequest;
+import com.google.android.gms.location.LocationResult;
 import com.google.android.gms.location.LocationServices;
 import com.google.android.gms.location.places.AutocompletePrediction;
 import com.google.android.gms.location.places.Place;
@@ -77,6 +82,8 @@ import java.util.List;
 
 import mx.uach.newcompass3.models.PlaceInfo;
 
+import static java.lang.StrictMath.abs;
+
 /**
  * Created by Alt on 23/08/2018.
  */
@@ -102,6 +109,8 @@ public class MapActivity extends FragmentActivity implements OnMapReadyCallback,
     private LatLng currentLatLng, originLatLng, destinationLatLng;
     private GeoApiContext mGeoApiContext = null;
     private int spOption, travelWay;
+    private LocationManager mLocationManager;
+    private LocationListener mLocationListener;
     //Widgets
     private AutoCompleteTextView mSearchText;
     private ImageView mGps, mInfo, mPlacePicker, mClear, mAdd, mRouting;
@@ -127,6 +136,40 @@ public class MapActivity extends FragmentActivity implements OnMapReadyCallback,
         mAdd = findViewById(R.id.ic_add_origin);
         mRouting = findViewById(R.id.ic_direction);
         getLocationPermission();
+
+        mLocationManager = (LocationManager) this.getSystemService(LOCATION_SERVICE);
+        mLocationListener = new LocationListener() {
+            @Override
+            public void onLocationChanged(Location location) {
+                Location temp = new Location(LocationManager.GPS_PROVIDER);
+                temp.setLatitude(currentLatLng.latitude);
+                temp.setLongitude(currentLatLng.longitude);
+                float distance = location.distanceTo(temp);
+                //Log.d(TAG, "onLocationChanged: Distance: " + distance);
+                if(distance > 2){
+                    currentLatLng = new LatLng(location.getLatitude(), location.getLongitude());
+                    Log.d(TAG, "onLocationChanged: currentLatLng: " + currentLatLng);
+                    //Toast.makeText(MapActivity.this, "currentLatLng: " + currentLatLng, Toast.LENGTH_SHORT).show();
+                }
+            }
+
+            @Override
+            public void onStatusChanged(String provider, int status, Bundle extras) {
+
+            }
+
+            @Override
+            public void onProviderEnabled(String provider) {
+
+            }
+
+            @Override
+            public void onProviderDisabled(String provider) {
+
+            }
+        };
+
+        mLocationManager.requestLocationUpdates(LocationManager.GPS_PROVIDER, 0, 0, mLocationListener);
     }
 
     private void init(){
@@ -565,6 +608,9 @@ public class MapActivity extends FragmentActivity implements OnMapReadyCallback,
             PolylineOptions lineOptions = new PolylineOptions();
             lineOptions.width(2);
             lineOptions.color(Color.BLUE);
+            float rDistance = 0;
+            String distance = "";
+            String duration = "";
             //MarkerOptions markerOptions = new MarkerOptions();
             try {
                 int cfor;
@@ -577,21 +623,21 @@ public class MapActivity extends FragmentActivity implements OnMapReadyCallback,
                 }
                 Log.d(TAG, "onPostExecute: Entrando a ciclo For con cfor = " + cfor);
                 for (int i = 0; i < cfor; i++) {
-                    Log.d(TAG, "onPostExecute: Ciclo For iniciado");
                     points = new ArrayList();
-                    Log.d(TAG, "onPostExecute: Objeto points creado");
-                    if (lineOptions == null) {
-                        lineOptions = new PolylineOptions();
-                        Log.d(TAG, "onPostExecute: Objeto lineOptions creado");
-                    }else{
-                        Log.d(TAG, "onPostExecute: El objeto lineOptions ya había sido creado previamente");
-                    }
-
                     List<HashMap<String, String>> path = result.get(i);
                     Log.d(TAG, "onPostExecute: Entrando a ciclo For con path.size = " + path.size());
                     for (int j = 0; j < path.size(); j++) {
-                        Log.d(TAG, "onPostExecute: Ciclo For iniciado");
                         HashMap<String, String> point = path.get(j);
+
+                        if(j==0){    // Get distance from the list
+                            distance = point.get("distance");
+                            Log.d(TAG, "Calculando distancia: " + distance);
+                            continue;
+                        }else if(j==1){ // Get duration from the list
+                            duration = point.get("duration");
+                            Log.d(TAG, "Calculando duración: " + duration);
+                            continue;
+                        }
 
                         double lat = Double.parseDouble(point.get("lat"));
                         double lng = Double.parseDouble(point.get("lng"));
@@ -606,13 +652,16 @@ public class MapActivity extends FragmentActivity implements OnMapReadyCallback,
                     lineOptions.geodesic(true);
 
                 }
-
-// Drawing polyline in the Google Map for the i-th route
+                String[] distanceSplit = distance.split(" ");
+                rDistance = Float.parseFloat(distanceSplit[0]);
+                Log.d(TAG, "onPostExecute:\nDistancia: "+distance + ", Duración: "+duration);
+                // Drawing polyline in the Google Map for the i-th route
                 mMap.addPolyline(lineOptions);
             } catch (Exception e) {
                 Toast.makeText(getApplicationContext(), "Error al generar enrutamiento. Verifica que ambos puntos sean alcanzables",  Toast.LENGTH_LONG).show();
                 Log.e("Background Task", e.toString());
             }
+            Log.d(TAG, "onPostExecute: Distance in meters: " + rDistance);
         }
     }
     private String getDirectionsUrl(LatLng origin, LatLng dest) {

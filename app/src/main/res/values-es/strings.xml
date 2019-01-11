@@ -13,6 +13,8 @@
     <string name="originSet">Marcador asignado como origen</string>
     <string name="destinationSet">Marcador asignado como destino</string>
     <string name="locationSetError">Error asignando marcador como origen. Verifique que existe un marcador</string>
+    <string name="title_activity_provider_map">Mapa de proveedor</string>
+    <string name="distance">Distiancia: </string>
 
     <string-array name="slabels">
         <item>Transporte personal</item>
