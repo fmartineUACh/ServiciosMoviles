@@ -1,6 +1,8 @@
 package mx.uach.newcompass3;
 
 import android.Manifest;
+import android.content.Context;
+import android.content.SharedPreferences;
 import android.content.pm.PackageManager;
 import android.graphics.Color;
 import android.location.Location;
@@ -46,13 +48,7 @@ import com.google.firebase.database.DataSnapshot;
 import com.google.firebase.database.DatabaseError;
 import com.google.firebase.database.DatabaseReference;
 import com.google.firebase.database.FirebaseDatabase;
-import com.google.firebase.database.ValueEventListener;
-import com.google.maps.DistanceMatrixApi;
-import com.google.maps.DistanceMatrixApiRequest;
 import com.google.maps.GeoApiContext;
-import com.google.maps.errors.ApiException;
-import com.google.maps.model.DistanceMatrix;
-import com.google.maps.model.TravelMode;
 
 import org.json.JSONObject;
 
@@ -63,11 +59,9 @@ import java.io.InputStreamReader;
 import java.net.HttpURLConnection;
 import java.net.URL;
 import java.util.ArrayList;
-import java.util.Collections;
 import java.util.HashMap;
 import java.util.List;
-import java.util.Objects;
-import java.util.concurrent.TimeUnit;
+import java.util.concurrent.ExecutionException;
 
 import mx.uach.newcompass3.Objects.ActiveService;
 import mx.uach.newcompass3.Objects.FirebaseReferences;
@@ -97,10 +91,11 @@ public class ProviderMap extends FragmentActivity implements OnMapReadyCallback,
     private ActiveService activo;
     private LocationManager mLocationManager;
     private LocationListener mLocationListener;
-    private float rDistance = 0;
+    private float rDistance = 0, mDistance = 0;
     private String rDistUnit;
-    private String distance = "";
-    private String duration = "";
+    private String sDistance = "";
+    private String sDuration = "";
+    private int childs = 0;
     //Widgets
     private ImageView mGps;
     private Button btnAccept;
@@ -119,6 +114,12 @@ public class ProviderMap extends FragmentActivity implements OnMapReadyCallback,
         btnAccept = findViewById(R.id.btn_accept);
         getLocationPermission();
 
+        if (ActivityCompat.checkSelfPermission(this, Manifest.permission.ACCESS_FINE_LOCATION)
+                != PackageManager.PERMISSION_GRANTED && ActivityCompat.checkSelfPermission(this, Manifest.permission.ACCESS_COARSE_LOCATION)
+                != PackageManager.PERMISSION_GRANTED) {
+            return;
+        }
+        mLocationManager.requestLocationUpdates(LocationManager.GPS_PROVIDER, 0, 0, mLocationListener);
         mLocationManager = (LocationManager) this.getSystemService(LOCATION_SERVICE);
         mLocationListener = new LocationListener() {
             @Override
@@ -128,7 +129,7 @@ public class ProviderMap extends FragmentActivity implements OnMapReadyCallback,
                 temp.setLongitude(currentLatLng.longitude);
                 float distance = location.distanceTo(temp);
                 //Log.d(TAG, "onLocationChanged: Distance: " + distance);
-                if(distance > 2){
+                if (distance > 2) {
                     currentLatLng = new LatLng(location.getLatitude(), location.getLongitude());
                     Log.d(TAG, "onLocationChanged: currentLatLng: " + currentLatLng);
                     //Toast.makeText(MapActivity.this, "currentLatLng: " + currentLatLng, Toast.LENGTH_SHORT).show();
@@ -150,7 +151,6 @@ public class ProviderMap extends FragmentActivity implements OnMapReadyCallback,
 
             }
         };
-        mLocationManager.requestLocationUpdates(LocationManager.GPS_PROVIDER, 0, 0, mLocationListener);
 
         adaptador = new ArrayAdapter<>(this, android.R.layout.simple_list_item_1, android.R.id.text1);
         listView = findViewById(R.id.list_view);
@@ -158,7 +158,6 @@ public class ProviderMap extends FragmentActivity implements OnMapReadyCallback,
         listView.setAdapter(adaptador);
         Log.d(TAG, "onCreate: Lista creada");
         listView.setOnItemClickListener(new AdapterView.OnItemClickListener() {
-
             @Override
             public void onItemClick(AdapterView<?> arg0, View arg1, int arg2, long arg3) {
                 activo = serviciosActivos.get(arg2);
@@ -185,6 +184,8 @@ public class ProviderMap extends FragmentActivity implements OnMapReadyCallback,
         serviceRef.addChildEventListener(new ChildEventListener() {
             @Override
             public void onChildAdded(@NonNull DataSnapshot dataSnapshot, String s) {
+                childs ++;
+                Log.d(TAG, "onChildAdded: Inserción " + childs);
                 Log.d(TAG, "onChildAdded: Hijo a crear: " + dataSnapshot);
                 ActiveService servicio = dataSnapshot.getValue(ActiveService.class);
                 LatLng org = new LatLng(servicio.getOriginlat(), servicio.getOriginlon());
@@ -196,11 +197,15 @@ public class ProviderMap extends FragmentActivity implements OnMapReadyCallback,
                 }
                 drawing = false;
                 routing(currentLatLng, org);
+                Log.d(TAG, "onChildAdded: Distancia: "+sDistance + ", Duración: "+sDuration);
                 //Insertar en listas
-                String[] distanceSplit = distance.split(" ");
-                //rDistance = Float.parseFloat(distanceSplit[0]);
-                //rDistUnit = distanceSplit[1];
+                String[] distanceSplit = sDistance.split(" ");
+                rDistance = Float.parseFloat(distanceSplit[0]);
+                rDistUnit = distanceSplit[1];
                 Log.d(TAG, "onChildAdded: Asignando distancia de " + rDistance + " " + rDistUnit + " al elemento actual.");
+                if(rDistUnit.compareTo("km") == 0){
+                    rDistance = rDistance * 1000;
+                }
                 servicio.setDistance(rDistance);
                 servicio.setDistUnit(rDistUnit);
                 assert servicio != null;
@@ -284,14 +289,20 @@ public class ProviderMap extends FragmentActivity implements OnMapReadyCallback,
         adaptador.clear();
         Log.d(TAG, "updateAdapter: Actualizando adaptador.");
         int i = 0;
+        float aDistance;
         for(ActiveService elemento : serviciosActivos){
-            adaptador.add(label[elemento.getService()] + "\n" + servicesKeys.get(i) + "\n" + "Distancia" + " " + elemento.getDistance() + " " + elemento.getDistUnit());
+            if (elemento.getDistUnit().compareTo("km") == 0){
+               aDistance = elemento.getDistance() / 1000;
+            }else{
+                aDistance = elemento.getDistance();
+            }
+            adaptador.add(label[elemento.getService()] + "\n" + servicesKeys.get(i) + "\n" + "Distancia" + " " + aDistance + " " + elemento.getDistUnit());
             Log.d(TAG, "updateAdapter: " + label[elemento.getService()]);
             i++;
         }
     }
 
-    //Implementación de mapa
+    /**Implementación de mapa**/
     private void initMap() {
         // Obtain the SupportMapFragment and get notified when the map is ready to be used.
         Log.d(TAG, "initMap: Iniciando mapa");
@@ -422,7 +433,7 @@ public class ProviderMap extends FragmentActivity implements OnMapReadyCallback,
             init();
         }
     }
-    //Menú lateral
+    /**Menú lateral**/
     @Override
     public boolean onOptionsItemSelected(MenuItem item) {
         switch (item.getItemId()) {
@@ -438,7 +449,7 @@ public class ProviderMap extends FragmentActivity implements OnMapReadyCallback,
         return super.onOptionsItemSelected(item);
     }
 
-    //Métodos de enrutamiento
+    /**Métodos de enrutamiento**/
     //Ejecutando enrutamiento
     public void routing(LatLng origin, LatLng destination){
         //Este código debe ir encerrado dentro de condiciones pues debe comportarse distinto según la opción elegida por el usuario en la pantalla anterior
@@ -463,13 +474,19 @@ public class ProviderMap extends FragmentActivity implements OnMapReadyCallback,
                 try {
                     String url = getDirectionsUrl(origin, destination);
                     Log.d(TAG, "Routing: Obteniendo url de dirección.\norigin: " + origin + "\ndestination: " + destination + "\nurl: " + url);
-                    ProviderMap.DownloadTask downloadTask = new ProviderMap.DownloadTask();
                     // Start downloading json data from Google Directions API
-                    downloadTask.execute(url);
-                    Log.d(TAG, "Routing: Descarga de datos Json realizada con éxito");
+                    ProviderMap.DownloadTask dt = new ProviderMap.DownloadTask();
+                    String result = dt.execute(url).get();
+                    Log.d(TAG, "Routing: Proceso asíncrono devolvió: " + result);
+                    List<List<HashMap<String, String>>> routes = parserTask(result);
+                    mapTask(routes);
                 } catch (NullPointerException e) {
                     Toast.makeText(getApplicationContext(), getString(R.string.routeError), Toast.LENGTH_LONG).show();
                     Log.e(TAG, "routing: Error de enrutamiento: " + e.getMessage(), e);
+                } catch (InterruptedException e) {
+                    e.printStackTrace();
+                } catch (ExecutionException e) {
+                    e.printStackTrace();
                 }
             }else{
                 Log.e(TAG, "Routing: Las coordenadas de origen y destino son iguales. Verifica sus valores.");
@@ -477,34 +494,6 @@ public class ProviderMap extends FragmentActivity implements OnMapReadyCallback,
         }else{
             Toast.makeText(getApplicationContext(), getString(R.string.noRouteData), Toast.LENGTH_LONG).show();
             Log.e(TAG, "Routing: No se tienen coordenadas para enrutamiento.");
-        }
-    }
-
-    private class DownloadTask extends AsyncTask<String, Void, String> {
-
-        @Override
-        protected String doInBackground(String... url) {
-
-            String data = "";
-
-            try {
-                data = downloadUrl(url[0]);
-            } catch (Exception e) {
-                Log.d("Background Task", e.toString());
-            }
-            return data;
-        }
-
-        @Override
-        protected void onPostExecute(String result) {
-            Log.d(TAG, "DownloadTask: onPostExecute: result: " + result);
-            super.onPostExecute(result);
-
-            ProviderMap.ParserTask parserTask = new ProviderMap.ParserTask();
-
-
-            parserTask.execute(result);
-
         }
     }
     private String getDirectionsUrl(LatLng origin, LatLng dest) {
@@ -557,12 +546,110 @@ public class ProviderMap extends FragmentActivity implements OnMapReadyCallback,
             br.close();
 
         } catch (Exception e) {
-            Log.d("Exception", e.toString());
+            Log.d("downloadUrl: Exception", e.toString());
         } finally {
             iStream.close();
             urlConnection.disconnect();
         }
         return data;
+    }
+
+    private class DownloadTask extends AsyncTask<String, Void, String> {
+
+        @Override
+        protected String doInBackground(String... url) {
+
+            String data = "";
+
+            try {
+                data = downloadUrl(url[0]);
+                Log.d(TAG, "DownloadTask: data: " + data);
+            } catch (Exception e) {
+                Log.d("Background Task", e.toString());
+            }
+            return data;
+        }
+
+        @Override
+        protected void onPostExecute(String result) {
+            Log.d(TAG, "DownloadTask: onPostExecute: result: " + result);
+            super.onPostExecute(result);
+
+            //ProviderMap.ParserTask parserTask = new ProviderMap.ParserTask();
+            //parserTask.execute(result);
+        }
+    }
+    /**Métodos para convertir la información**/
+    private List<List<HashMap<String, String>>> parserTask(String... jsonData) {
+        Log.d(TAG, "ParserTask: Recibiendo: " + jsonData);
+        JSONObject jObject;
+        List<List<HashMap<String, String>>> routes = null;
+        try {
+            jObject = new JSONObject(jsonData[0]);
+            DirectionsJSONParser parser = new DirectionsJSONParser();
+
+            routes = parser.parse(jObject);
+        } catch (Exception e) {
+            e.printStackTrace();
+        }
+        return routes;
+    }
+    private void mapTask(List<List<HashMap<String, String>>> result) {
+        Log.d(TAG, "mapTask: Result: " + result);
+        ArrayList<LatLng> points;
+        PolylineOptions lineOptions = new PolylineOptions();
+        lineOptions.width(2);
+        lineOptions.color(Color.BLUE);
+        MarkerOptions markerOptions = new MarkerOptions();
+        try {
+            int cfor;
+            if(result.size()==0){
+                Log.w(TAG, "mapTask: result.size no tiene valor. Se asignará un valor de 1 para el ciclo.");
+                cfor = 1;
+            }else{
+                Log.d(TAG, "mapTask: result.size: " + result.size());
+                cfor = result.size();
+            }
+            Log.d(TAG, "mapTask: Entrando a ciclo For con cfor = " + cfor);
+            for (int i = 0; i < cfor; i++) {
+                points = new ArrayList();
+
+                List<HashMap<String, String>> path = result.get(i);
+                Log.d(TAG, "mapTask: Entrando a ciclo For con path.size = " + path.size());
+                for (int j = 0; j < path.size(); j++) {
+                    HashMap<String, String> point = path.get(j);
+
+                    if(j==0){    // Get distance from the list
+                        sDistance = point.get("distance");
+                        continue;
+                    }else if(j==1){ // Get duration from the list
+                        sDuration = point.get("duration");
+                        continue;
+                    }
+
+
+                    double lat = Double.parseDouble(point.get("lat"));
+                    double lng = Double.parseDouble(point.get("lng"));
+                    LatLng position = new LatLng(lat, lng);
+
+                    points.add(position);
+                }
+
+                lineOptions.addAll(points);
+                lineOptions.width(12);
+                lineOptions.color(Color.BLUE);
+                lineOptions.geodesic(true);
+
+            }
+            Log.d(TAG, "mapTask: Almacenando Distancia: "+sDistance + ", Duración: "+sDuration);
+            if(drawing) {
+                // Drawing polyline in the Google Map for the i-th route
+                mMap.addPolyline(lineOptions);
+            }
+        } catch (Exception e) {
+            Toast.makeText(getApplicationContext(), "Error al generar enrutamiento. Verifica que ambos puntos sean alcanzables",  Toast.LENGTH_LONG).show();
+            Log.e("Background Task", e.toString());
+        }
     }
     /**
      * A class to parse the Google Places in JSON format
@@ -572,9 +659,9 @@ public class ProviderMap extends FragmentActivity implements OnMapReadyCallback,
         // Parsing the data in non-ui thread
         @Override
         protected List<List<HashMap<String, String>>> doInBackground(String... jsonData) {
+            Log.d(TAG, "ParserTask: Recibiendo: " + jsonData);
             JSONObject jObject;
             List<List<HashMap<String, String>>> routes = null;
-
             try {
                 jObject = new JSONObject(jsonData[0]);
                 DirectionsJSONParser parser = new DirectionsJSONParser();
@@ -613,10 +700,10 @@ public class ProviderMap extends FragmentActivity implements OnMapReadyCallback,
                         HashMap<String, String> point = path.get(j);
 
                         if(j==0){    // Get distance from the list
-                            distance = point.get("distance");
+                            sDistance = point.get("distance");
                             continue;
                         }else if(j==1){ // Get duration from the list
-                            duration = point.get("duration");
+                            sDuration = point.get("duration");
                             continue;
                         }
 
@@ -634,7 +721,7 @@ public class ProviderMap extends FragmentActivity implements OnMapReadyCallback,
                     lineOptions.geodesic(true);
 
                 }
-                Log.d(TAG, "onPostExecute: Distancia: "+distance + ", Duración: "+duration);
+                Log.d(TAG, "onPostExecute: Almacenando Distancia: "+sDistance + ", Duración: "+sDuration);
                 if(drawing) {
                     // Drawing polyline in the Google Map for the i-th route
                     mMap.addPolyline(lineOptions);
