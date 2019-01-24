@@ -17,6 +17,7 @@
         android:layout_marginTop="10dp"
         android:layout_marginRight="10dp"
         android:layout_marginLeft="10dp"
+        android:elevation="10dp"
         android:background="@drawable/white_border"
         android:id="@+id/relLayout1">
 
@@ -102,5 +103,17 @@
         android:layout_alignStart="@id/place_info"
         android:layout_marginTop="15dp"
         android:src="@drawable/ic_origin"/>
+    <Button
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:id="@+id/btnRequest"
+        style="@style/Widget.AppCompat.Button"
+        android:layout_alignEnd="@+id/map"
+        android:layout_alignBottom="@+id/map"
+        android:layout_marginEnd="15dp"
+        android:backgroundTint="@color/colorPrimaryDark"
+        android:text="@string/request"
+        android:textColor="@color/common_google_signin_btn_text_dark_default"
+        android:visibility="invisible"/>
 
 </RelativeLayout>

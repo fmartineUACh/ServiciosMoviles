@@ -1,35 +1,31 @@
 package mx.uach.newcompass3.Objects;
 
-/**
- * Created by Alt on 09/12/2018.
- */
-
-public class ActiveService {
+public class ReleasedService {
     private int service;
-    private int attending;
     private double originlat;
     private double originlon;
     private double destinitylat;
     private double destinitylon;
-    private float distance;
-    private String key;
     private String client;
+    private String driver;
     private String date;
     private String rTime;
+    private String aTime;
 
-    public ActiveService() {
+    public ReleasedService() {
     }
 
-    public ActiveService(int service, int attending, double originlat, double originlon, double destinitylat, double destinitylon, String client, String date, String rTime) {
+    public ReleasedService(int service, double originlat, double originlon, double destinitylat, double destinitylon, String client, String driver, String date, String rTime, String aTime) {
         this.service = service;
-        this.attending = attending;
         this.originlat = originlat;
         this.originlon = originlon;
         this.destinitylat = destinitylat;
         this.destinitylon = destinitylon;
         this.client = client;
+        this.driver = driver;
         this.date = date;
         this.rTime = rTime;
+        this.aTime = aTime;
     }
 
     public int getService() {
@@ -38,14 +34,6 @@ public class ActiveService {
 
     public void setService(int service) {
         this.service = service;
-    }
-
-    public int getAttending() {
-        return attending;
-    }
-
-    public void setAttending(int attending) {
-        this.attending = attending;
     }
 
     public double getOriginlat() {
@@ -80,23 +68,43 @@ public class ActiveService {
         this.destinitylon = destinitylon;
     }
 
-    public float getDistance() {return distance;}
+    public String getClient() {
+        return client;
+    }
 
-    public void setDistance(float distance) { this.distance = distance; }
+    public void setClient(String client) {
+        this.client = client;
+    }
 
-    public String getKey() {return key;}
+    public String getDriver() {
+        return driver;
+    }
 
-    public void setKey(String key) { this.key = key; }
+    public void setDriver(String driver) {
+        this.driver = driver;
+    }
 
-    public String getClient() { return client; }
+    public String getDate() {
+        return date;
+    }
 
-    public void setClient(String client) { this.client = client; }
+    public void setDate(String date) {
+        this.date = date;
+    }
 
-    public String getDate() { return date; }
+    public String getrTime() {
+        return rTime;
+    }
 
-    public void setDate(String date) { this.date = date; }
+    public void setrTime(String rTime) {
+        this.rTime = rTime;
+    }
 
-    public String getrTime() { return rTime; }
+    public String getaTime() {
+        return aTime;
+    }
 
-    public void setrTime(String rTime) { this.rTime = rTime; }
+    public void setaTime(String aTime) {
+        this.aTime = aTime;
+    }
 }

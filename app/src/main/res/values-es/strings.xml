@@ -14,7 +14,13 @@
     <string name="destinationSet">Marcador asignado como destino</string>
     <string name="locationSetError">Error asignando marcador como origen. Verifique que existe un marcador</string>
     <string name="title_activity_provider_map">Mapa de proveedor</string>
-    <string name="distance">Distiancia: </string>
+    <string name="mapReady">Mapa listo</string>
+    <string name="myLocation">Ubicación actual</string>
+    <string name="aDistance">Distancia: </string>
+    <string name="btn_accept">Aceptar solicitud</string>
+    <string name="btn_cancel">Cancelar solicitud</string>
+    <string name="request">Solicitar servicio</string>
+    <string name="requestSended">Solicitud enviada</string>
 
     <string-array name="slabels">
         <item>Transporte personal</item>
@@ -46,5 +52,4 @@
     <!--OrderFood-->
     <string name="ofLabel">Por favor haga su pedido.</string>
     <string name="ofHelp">Recibe comida seleccionando el restaurante donde deseas ordenar. Por defecto tu orden se entrega en tu ubicación actual, pero puedes elegir un lugar distinto para entregar tu orden.</string>
-    <string name="btn_accept">Aceptar solicitud</string>
 </resources>

@@ -1,26 +1,20 @@
 package mx.uach.newcompass3.Objects;
 
-/**
- * Created by Alt on 09/12/2018.
- */
-
-public class ActiveService {
+public class RequestingService {
     private int service;
     private int attending;
     private double originlat;
     private double originlon;
     private double destinitylat;
     private double destinitylon;
-    private float distance;
-    private String key;
     private String client;
     private String date;
     private String rTime;
 
-    public ActiveService() {
+    public RequestingService() {
     }
 
-    public ActiveService(int service, int attending, double originlat, double originlon, double destinitylat, double destinitylon, String client, String date, String rTime) {
+    public RequestingService(int service, int attending, double originlat, double originlon, double destinitylat, double destinitylon, String client, String date, String rTime) {
         this.service = service;
         this.attending = attending;
         this.originlat = originlat;
@@ -80,23 +74,27 @@ public class ActiveService {
         this.destinitylon = destinitylon;
     }
 
-    public float getDistance() {return distance;}
+    public String getClient() {
+        return client;
+    }
 
-    public void setDistance(float distance) { this.distance = distance; }
+    public void setClient(String client) {
+        this.client = client;
+    }
 
-    public String getKey() {return key;}
+    public String getDate() {
+        return date;
+    }
 
-    public void setKey(String key) { this.key = key; }
+    public void setDate(String date) {
+        this.date = date;
+    }
 
-    public String getClient() { return client; }
+    public String getrTime() {
+        return rTime;
+    }
 
-    public void setClient(String client) { this.client = client; }
-
-    public String getDate() { return date; }
-
-    public void setDate(String date) { this.date = date; }
-
-    public String getrTime() { return rTime; }
-
-    public void setrTime(String rTime) { this.rTime = rTime; }
+    public void setrTime(String rTime) {
+        this.rTime = rTime;
+    }
 }

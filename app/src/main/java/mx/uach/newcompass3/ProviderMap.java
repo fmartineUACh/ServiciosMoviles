@@ -27,6 +27,7 @@ import android.widget.Toast;
 
 import com.google.android.gms.common.ConnectionResult;
 import com.google.android.gms.common.api.GoogleApiClient;
+import com.google.android.gms.common.api.Releasable;
 import com.google.android.gms.location.FusedLocationProviderClient;
 import com.google.android.gms.location.LocationServices;
 import com.google.android.gms.location.places.Places;
@@ -58,13 +59,19 @@ import java.io.InputStream;
 import java.io.InputStreamReader;
 import java.net.HttpURLConnection;
 import java.net.URL;
+import java.text.SimpleDateFormat;
 import java.util.ArrayList;
+import java.util.Calendar;
+import java.util.Date;
 import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 import java.util.concurrent.ExecutionException;
 
 import mx.uach.newcompass3.Objects.ActiveService;
 import mx.uach.newcompass3.Objects.FirebaseReferences;
+import mx.uach.newcompass3.Objects.ReleasedService;
+import mx.uach.newcompass3.Objects.RequestingService;
 import mx.uach.newcompass3.models.PlaceInfo;
 
 public class ProviderMap extends FragmentActivity implements OnMapReadyCallback, GoogleApiClient.OnConnectionFailedListener {
@@ -80,29 +87,28 @@ public class ProviderMap extends FragmentActivity implements OnMapReadyCallback,
     //Vars
     private Boolean mLocationPermissionGranted = false, drawing = true;
     private GoogleMap mMap;
-    private FusedLocationProviderClient mFusedLocationProviderClient;
     private PlaceAutocompleteAdapter mPlaceAutocompleteAdapter;
-    private GoogleApiClient mGoogleApiClient;
     private PlaceInfo mPlace;
     private Marker mMarker;
     private LatLng currentLatLng, originLatLng, destinationLatLng;
     private GeoApiContext mGeoApiContext;
     private List<ActiveService> serviciosActivos = new ArrayList<ActiveService>();
     private ActiveService activo;
-    private LocationManager mLocationManager;
-    private LocationListener mLocationListener;
+    //private LocationListener mLocationListener;
     private float rDistance = 0, mDistance = 0;
     private String rDistUnit;
     private String sDistance = "";
     private String sDuration = "";
-    private int childs = 0;
+    private int children = 0, working = 0;
     //Widgets
     private ImageView mGps;
-    private Button btnAccept;
+    private Button btnAccept, btnCancel, btnRelease;
     private ArrayList markerPoints = new ArrayList();
     private ListView listView;
     private DrawerLayout drawerLayout;
-    private FirebaseDatabase database;
+    private FirebaseDatabase database = FirebaseDatabase.getInstance();
+    private DatabaseReference activeRef = database.getReference(FirebaseReferences.ACTIVESERVICES_REFERENCE);
+    private DatabaseReference releasedRef = database.getReference(FirebaseReferences.RELEASEDSERVICES_REFERENCE);
     private ArrayAdapter<String> adaptador = null;
     private ArrayList servicesKeys = new ArrayList();
 
@@ -112,46 +118,18 @@ public class ProviderMap extends FragmentActivity implements OnMapReadyCallback,
         setContentView(R.layout.provider_map);
         mGps = findViewById(R.id.ic_gps);
         btnAccept = findViewById(R.id.btn_accept);
+        btnCancel = findViewById(R.id.btn_cancel);
+        /**Botón con fines de prueba. Eliminar en versión final.*/
+        btnRelease = findViewById(R.id.btn_release);
         getLocationPermission();
-
         if (ActivityCompat.checkSelfPermission(this, Manifest.permission.ACCESS_FINE_LOCATION)
-                != PackageManager.PERMISSION_GRANTED && ActivityCompat.checkSelfPermission(this, Manifest.permission.ACCESS_COARSE_LOCATION)
-                != PackageManager.PERMISSION_GRANTED) {
-            return;
+                != PackageManager.PERMISSION_GRANTED && ActivityCompat.checkSelfPermission(this,
+                Manifest.permission.ACCESS_COARSE_LOCATION) != PackageManager.PERMISSION_GRANTED) {
+            Log.e(TAG, "onCreate: Permisos de ubicación denegados.");
+        }else {
+            LocationManager mLocationManager = (LocationManager) getSystemService(LOCATION_SERVICE);
+            mLocationManager.requestLocationUpdates(LocationManager.GPS_PROVIDER, 0, 2, mLocationListener);
         }
-        mLocationManager.requestLocationUpdates(LocationManager.GPS_PROVIDER, 0, 0, mLocationListener);
-        mLocationManager = (LocationManager) this.getSystemService(LOCATION_SERVICE);
-        mLocationListener = new LocationListener() {
-            @Override
-            public void onLocationChanged(Location location) {
-                Location temp = new Location(LocationManager.GPS_PROVIDER);
-                temp.setLatitude(currentLatLng.latitude);
-                temp.setLongitude(currentLatLng.longitude);
-                float distance = location.distanceTo(temp);
-                //Log.d(TAG, "onLocationChanged: Distance: " + distance);
-                if (distance > 2) {
-                    currentLatLng = new LatLng(location.getLatitude(), location.getLongitude());
-                    Log.d(TAG, "onLocationChanged: currentLatLng: " + currentLatLng);
-                    //Toast.makeText(MapActivity.this, "currentLatLng: " + currentLatLng, Toast.LENGTH_SHORT).show();
-                }
-            }
-
-            @Override
-            public void onStatusChanged(String provider, int status, Bundle extras) {
-
-            }
-
-            @Override
-            public void onProviderEnabled(String provider) {
-
-            }
-
-            @Override
-            public void onProviderDisabled(String provider) {
-
-            }
-        };
-
         adaptador = new ArrayAdapter<>(this, android.R.layout.simple_list_item_1, android.R.id.text1);
         listView = findViewById(R.id.list_view);
         drawerLayout = findViewById(R.id.drawer_layout);
@@ -170,57 +148,68 @@ public class ProviderMap extends FragmentActivity implements OnMapReadyCallback,
                 drawing = true;
                 routing(origin, destinity);
                 drawerLayout.closeDrawers();
+                btnAccept.setVisibility(View.VISIBLE);
             }
         });
-
-        // Mostramos el botón en la barra de la aplicación
-        //getActionBar().setDisplayHomeAsUpEnabled(true);
-        //Creación de base de datos
-        Log.d(TAG, "onCreate: Creando instancia de Firebase");
-        database = FirebaseDatabase.getInstance();
-        Log.d(TAG, "onCreate: Instancia de Firebase creada");
-        final DatabaseReference serviceRef = database.getReference(FirebaseReferences.ACTIVESERVICES_REFERENCE);
-        Log.d(TAG, "onCreate: Referencia de base de datos Firebase creada");
-        serviceRef.addChildEventListener(new ChildEventListener() {
+        btnAccept.setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View v) {
+                working = 1;
+                activeRef.child(activo.getKey()).child("attending").setValue(1);
+                listView.setVisibility(View.INVISIBLE);
+                btnAccept.setVisibility(View.INVISIBLE);
+                btnCancel.setVisibility(View.VISIBLE);
+                btnRelease.setVisibility(View.VISIBLE);
+                drawing = true;
+                originLatLng = new LatLng(activo.getOriginlat(), activo.getOriginlon());
+                destinationLatLng = new LatLng(activo.getDestinitylat(), activo.getDestinitylon());
+                routing(currentLatLng, originLatLng);
+            }
+        });
+        btnCancel.setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View v) {
+                working = 0;
+                mMap.clear();
+                activeRef.child(activo.getKey()).child("attending").setValue(0);
+                listView.setVisibility(View.VISIBLE);
+                btnCancel.setVisibility(View.INVISIBLE);
+                btnRelease.setVisibility(View.INVISIBLE);
+                moveCamera(currentLatLng, DEFAUL_ZOOM, getString(R.string.myLocation));
+            }
+        });
+        btnRelease.setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View v) {
+                releaseService();
+            }
+        });
+        activeRef.addChildEventListener(new ChildEventListener() {
             @Override
             public void onChildAdded(@NonNull DataSnapshot dataSnapshot, String s) {
-                childs ++;
-                Log.d(TAG, "onChildAdded: Inserción " + childs);
+                children++;
+                Log.d(TAG, "onChildAdded: Inserción " + children);
                 Log.d(TAG, "onChildAdded: Hijo a crear: " + dataSnapshot);
                 ActiveService servicio = dataSnapshot.getValue(ActiveService.class);
-                LatLng org = new LatLng(servicio.getOriginlat(), servicio.getOriginlon());
                 //Calcular distancia por enrutamiento
-                if (currentLatLng == null){
-                    Log.d(TAG, "onChildAdded: Ubicación actual nula.");
-                    getLocationPermission();
-                    getDeviceLocation();
+                if (currentLatLng == null) {
+                    Log.d(TAG, "onChildAdded: Ubicación actual nula. No es posible generar enrutamiento.");
+                }else {
+                    servicio = gettingDistance(servicio);
                 }
-                drawing = false;
-                routing(currentLatLng, org);
-                Log.d(TAG, "onChildAdded: Distancia: "+sDistance + ", Duración: "+sDuration);
-                //Insertar en listas
-                String[] distanceSplit = sDistance.split(" ");
-                rDistance = Float.parseFloat(distanceSplit[0]);
-                rDistUnit = distanceSplit[1];
-                Log.d(TAG, "onChildAdded: Asignando distancia de " + rDistance + " " + rDistUnit + " al elemento actual.");
-                if(rDistUnit.compareTo("km") == 0){
-                    rDistance = rDistance * 1000;
-                }
-                servicio.setDistance(rDistance);
-                servicio.setDistUnit(rDistUnit);
+                servicio.setKey(dataSnapshot.getKey());
                 assert servicio != null;
                 Log.d(TAG, "onChildAdded:\nServicio: " + servicio.getService() + "\n¿Atendiendo? " + servicio.getAttending()
                         + "\nOrigen: " + servicio.getOriginlat() + ", " + servicio.getOriginlon()
                         + "\nDestino: " + servicio.getDestinitylat() + ", " + servicio.getDestinitylon()
-                        + "\nDistancia: " + servicio.getDistance() + " " + servicio.getDistUnit());
+                        + "\nDistancia: " + servicio.getDistance() + " m.");
                 if (servicio.getAttending() == 0) {
                     Log.d(TAG, "onChildAdded: Añadiendo objeto: " + servicio);
-                    Log.d(TAG, "onChildAdded: CurrentLatLng: " + currentLatLng + " Origin: " + org);
+                    Log.d(TAG, "onChildAdded: CurrentLatLng: " + currentLatLng + " Origin: " + new LatLng(servicio.getOriginlat(), servicio.getOriginlon()));
                     serviciosActivos.add(servicio);
                     servicesKeys.add(dataSnapshot.getKey());
                     updateAdapter();
                     Log.d(TAG, "onChildAdded: Objeto añadido a la lista.");
-
                 } else {
                     Log.d(TAG, "onChildAdded: El objeto tiene la propiedad Attending como verdadera y no ha sido añadido a la lista.");
                 }
@@ -229,29 +218,33 @@ public class ProviderMap extends FragmentActivity implements OnMapReadyCallback,
             @Override
             public void onChildChanged(@NonNull DataSnapshot dataSnapshot, String s) {
                 Log.d(TAG, "onChildChanged: Hijo a modificar: " + dataSnapshot);
-                ActiveService servicio = dataSnapshot.getValue(ActiveService.class);
-                assert servicio != null;
-                Log.d(TAG, "onChildChanged:\nServicio: " + servicio.getService() + "\n¿Atendiendo? " + servicio.getAttending()
-                        + "\nOrigen: " + servicio.getOriginlat() + ", " + servicio.getOriginlon()
-                        + "\nDestino: " + servicio.getDestinitylat() + ", " + servicio.getDestinitylon());
-                Log.d(TAG, "onChildChanged: Modificando objeto: " + servicio);
-                int index = servicesKeys.indexOf(dataSnapshot.getKey());
-                Log.d(TAG, "onChildChanged: Índice de elemento a modificar: " + index);
-                if (index == -1){
-                    Log.d(TAG, "onChildChanged: Elemento que vuelve a ser activo. Trasladando a onChildAdded");
-                    onChildAdded(dataSnapshot, s);
-                }else if(index >= 0){
-                    if (servicio.getAttending() == 0) {
-                        serviciosActivos.set(index, servicio);
-                        Log.d(TAG, "onChildChanged: Objeto modificado en la lista.");
+                try{
+                    ActiveService servicio = dataSnapshot.getValue(ActiveService.class);
+                    assert servicio != null;
+                    Log.d(TAG, "onChildChanged:\nServicio: " + servicio.getService() + "\n¿Atendiendo? " + servicio.getAttending()
+                            + "\nOrigen: " + servicio.getOriginlat() + ", " + servicio.getOriginlon()
+                            + "\nDestino: " + servicio.getDestinitylat() + ", " + servicio.getDestinitylon());
+                    Log.d(TAG, "onChildChanged: Modificando objeto: " + servicio);
+                    int index = servicesKeys.indexOf(dataSnapshot.getKey());
+                    Log.d(TAG, "onChildChanged: Índice de elemento a modificar: " + index);
+                    if (index == -1) {
+                        Log.d(TAG, "onChildChanged: Elemento que vuelve a ser activo. Trasladando a onChildAdded");
+                        onChildAdded(dataSnapshot, s);
+                    } else if (index >= 0) {
+                        if (servicio.getAttending() == 0) {
+                            serviciosActivos.set(index, servicio);
+                            Log.d(TAG, "onChildChanged: Objeto modificado en la lista.");
+                        } else {
+                            serviciosActivos.remove(index);
+                            servicesKeys.remove(index);
+                            Log.d(TAG, "onChildChanged: El objeto tiene la propiedad Attending como verdadera y ha sido retirado de la lista.");
+                        }
+                        updateAdapter();
                     } else {
-                        serviciosActivos.remove(index);
-                        servicesKeys.remove(index);
-                        Log.d(TAG, "onChildChanged: El objeto tiene la propiedad Attending como verdadera y ha sido retirado de la lista.");
+                        Log.e(TAG, "onChildChanged: Error, número de lista incorrecto.");
                     }
-                    updateAdapter();
-                }else{
-                    Log.e(TAG, "onChildChanged: Error, número de lista incorrecto.");
+                }catch (Exception e){
+                    Log.e(TAG, "onChildChanged: Error: " + e.getMessage());
                 }
             }
 
@@ -266,9 +259,14 @@ public class ProviderMap extends FragmentActivity implements OnMapReadyCallback,
                 Log.d(TAG, "onChildRemoved: eliminando objeto: " + servicio);
                 int index = servicesKeys.indexOf(dataSnapshot.getKey());
                 Log.d(TAG, "onChildRemoved: Índice de elemento a eliminar: " + index);
-                serviciosActivos.remove(index);
-                servicesKeys.remove(index);
-                updateAdapter();
+                try {
+                    serviciosActivos.remove(index);
+                    servicesKeys.remove(index);
+                    updateAdapter();
+                }catch (ArrayIndexOutOfBoundsException ob){
+                    Log.d(TAG, "onChildRemoved: Intento de borrar información que eliminada previamente.");
+                    Log.d(TAG, "Detalles: " + ob.getMessage());
+                }
             }
 
             @Override
@@ -284,6 +282,66 @@ public class ProviderMap extends FragmentActivity implements OnMapReadyCallback,
         });
     }
 
+    private ActiveService gettingDistance(ActiveService servicio) {
+        drawing = false;
+        LatLng origin = new LatLng(servicio.getOriginlat(), servicio.getOriginlon());
+        routing(currentLatLng, origin);
+        Log.d(TAG, "gettingDistance: Distancia: " + sDistance + ", Duración: " + sDuration);
+        //Insertar en listas
+        String[] distanceSplit = sDistance.split(" ");
+        rDistance = Float.parseFloat(distanceSplit[0]);
+        rDistUnit = distanceSplit[1];
+        Log.d(TAG, "gettingDistance: Asignando distancia de " + rDistance + " " + rDistUnit + " al elemento actual.");
+        if (rDistUnit.compareTo("km") == 0) {
+            rDistance = rDistance * 1000;
+        }
+        servicio.setDistance(rDistance);
+        return servicio;
+    }
+
+    public  LocationListener mLocationListener = new LocationListener() {
+        @Override
+        public void onLocationChanged(Location location) {
+            currentLatLng = new LatLng(location.getLatitude(), location.getLongitude());
+            Log.d(TAG, "onLocationChanged: currentLatLng: " + currentLatLng);
+            //Toast.makeText(MapActivity.this, "currentLatLng: " + currentLatLng, Toast.LENGTH_SHORT).show();
+            Location location1 = new Location(LocationManager.GPS_PROVIDER), location2 = new Location(LocationManager.GPS_PROVIDER);
+            if(working == 1){
+                location1.setLatitude(currentLatLng.latitude);
+                location1.setLongitude(currentLatLng.longitude);
+                location2.setLatitude(originLatLng.latitude);
+                location2.setLatitude(originLatLng.longitude);
+                if(location1.distanceTo(location2) < 10){
+                    routing(currentLatLng, destinationLatLng);
+                    working = 2;
+                }
+            }else if (working == 2){
+                location1.setLatitude(currentLatLng.latitude);
+                location1.setLatitude(currentLatLng.longitude);
+                location2.setLatitude(destinationLatLng.latitude);
+                location2.setLatitude(destinationLatLng.longitude);
+                if(location1.distanceTo(location2) < 10){
+                    releaseService();
+                }
+            }
+        }
+
+        @Override
+        public void onStatusChanged(String provider, int status, Bundle extras) {
+
+        }
+
+        @Override
+        public void onProviderEnabled(String provider) {
+
+        }
+
+        @Override
+        public void onProviderDisabled(String provider) {
+
+        }
+    };
+
     private void updateAdapter(){
         String[] label = getResources().getStringArray(R.array.slabels);
         adaptador.clear();
@@ -291,31 +349,62 @@ public class ProviderMap extends FragmentActivity implements OnMapReadyCallback,
         int i = 0;
         float aDistance;
         for(ActiveService elemento : serviciosActivos){
-            if (elemento.getDistUnit().compareTo("km") == 0){
-               aDistance = elemento.getDistance() / 1000;
-            }else{
-                aDistance = elemento.getDistance();
+            aDistance = elemento.getDistance();
+            String aUnit = " m.";
+            if(aDistance > 1000){
+                aDistance = aDistance/1000;
+                aUnit = " km.";
             }
-            adaptador.add(label[elemento.getService()] + "\n" + servicesKeys.get(i) + "\n" + "Distancia" + " " + aDistance + " " + elemento.getDistUnit());
+            adaptador.add(label[elemento.getService()] + "\n" + servicesKeys.get(i) + "\n" + getString(R.string.aDistance) + aDistance + aUnit);
             Log.d(TAG, "updateAdapter: " + label[elemento.getService()]);
             i++;
         }
     }
 
-    /**Implementación de mapa**/
-    private void initMap() {
-        // Obtain the SupportMapFragment and get notified when the map is ready to be used.
-        Log.d(TAG, "initMap: Iniciando mapa");
-        SupportMapFragment mapFragment = (SupportMapFragment) getSupportFragmentManager().findFragmentById(R.id.map);
-        mapFragment.getMapAsync(ProviderMap.this);
+    private void updateDistance() {
+        if(currentLatLng == null){
+            Log.e(TAG, "Error, la ubicación actual sigue siendo desconocida y el método updateDistance ha sido llamado por error.");
+            return;
+        }
+        int i = 0;
+        for(ActiveService elemento : serviciosActivos){
+            if (elemento.getDistance() == 0){
+                elemento = gettingDistance(elemento);
+                Log.d(TAG, "updateDistance: Actualizando elemento con índice " + i + " y distancia de " + elemento.getDistance() + "m.");
+                serviciosActivos.set(i, elemento);
+            }
+            i++;
+        }
+        updateAdapter();
     }
 
+    private void releaseService() {
+        mMap.clear();
+        btnCancel.setVisibility(View.INVISIBLE);
+        btnRelease.setVisibility(View.INVISIBLE);
+        moveCamera(currentLatLng, DEFAUL_ZOOM, getString(R.string.myLocation));
+        listView.setVisibility(View.VISIBLE);
+        working = 0;
+        if (rDistUnit.compareTo("km") == 0){
+            rDistance = rDistance * 1000;
+        }
+        Date cDate = Calendar.getInstance().getTime();
+        SimpleDateFormat tf = new SimpleDateFormat("kk:mm:ss");
+        String driver = "Test driver";
+        String cClient = "Test client";
+        releasedRef.push().setValue(new ReleasedService(activo.getService(),
+                activo.getOriginlat(), activo.getOriginlon(), activo.getDestinitylat(),
+                activo.getDestinitylon(), cClient, driver, activo.getDate(), activo.getrTime(), tf.format(cDate)));
+        activeRef.child(activo.getKey()).removeValue();
+    }
+
+    /**Implementación de mapa*/
     private void getLocationPermission(){
         Log.d(TAG, "getLocationPermission: Obteniendo permisos de ubicación");
         String[] permissions = {android.Manifest.permission.ACCESS_FINE_LOCATION, Manifest.permission.ACCESS_COARSE_LOCATION};
-
         if(ContextCompat.checkSelfPermission(this.getApplicationContext(), FINE_LOCATION) == PackageManager.PERMISSION_GRANTED){
             if(ContextCompat.checkSelfPermission(this.getApplicationContext(), COARSE_LOCATION) == PackageManager.PERMISSION_GRANTED){
+                Log.d(TAG, "getLocationPermission: Permisos concedidos");
                 mLocationPermissionGranted = true;
                 initMap();
             }else{
@@ -325,6 +414,90 @@ public class ProviderMap extends FragmentActivity implements OnMapReadyCallback,
             ActivityCompat.requestPermissions(this, permissions, LOCATION_PERMISSION_REQUEST_CODE);
         }
     }
+    private void initMap() {
+        // Obtain the SupportMapFragment and get notified when the map is ready to be used.
+        Log.d(TAG, "initMap: Iniciando mapa");
+        SupportMapFragment mapFragment = (SupportMapFragment) getSupportFragmentManager().findFragmentById(R.id.map);
+        mapFragment.getMapAsync(ProviderMap.this);
+    }
+    @Override
+    public void onMapReady(GoogleMap googleMap) {
+        Log.d(TAG, "onMapReady: Mapa listo");
+        Toast.makeText(this, R.string.mapReady, Toast.LENGTH_SHORT).show();
+        mMap = googleMap;
+        markerPoints.clear();
+        if (mLocationPermissionGranted) {
+            if (ActivityCompat.checkSelfPermission(this, Manifest.permission.ACCESS_FINE_LOCATION)
+                    != PackageManager.PERMISSION_GRANTED && ActivityCompat.checkSelfPermission(this,
+                    Manifest.permission.ACCESS_COARSE_LOCATION) != PackageManager.PERMISSION_GRANTED) {
+                return;
+            }
+            getDeviceLocation();
+            mMap.setMyLocationEnabled(true);
+            mMap.getUiSettings().setMyLocationButtonEnabled(false);
+
+            init();
+        }
+    }
+
+    private void getDeviceLocation(){
+        Log.d(TAG, "getDeviceLocation: Obteniendo la ubicación actual del dispositivo");
+        FusedLocationProviderClient mFusedLocationProviderClient = LocationServices.getFusedLocationProviderClient(this);
+        try{
+            if(mLocationPermissionGranted){
+                Task location = mFusedLocationProviderClient.getLastLocation();
+                location.addOnCompleteListener(new OnCompleteListener() {
+                    @Override
+                    public void onComplete(@NonNull Task task) {
+                        if(task.isSuccessful()){
+                            Log.d(TAG, "onComplete: ¡Ubicación encontrada!");
+                            Location currentLocation = (Location) task.getResult();
+                            currentLatLng = new LatLng(currentLocation.getLatitude(), currentLocation.getLongitude());
+                            moveCamera(currentLatLng, DEFAUL_ZOOM, getString(R.string.myLocation));
+                            updateDistance();
+                        }else{
+                            Log.d(TAG, "onComplete: La ubicación actual es nula");
+                            Toast.makeText(ProviderMap.this, "Incapaz de conseguir ubicación actual", Toast.LENGTH_SHORT).show();
+                        }
+                    }
+                });
+            }
+        }catch (SecurityException e){
+            Log.e(TAG, "getDeviceLocation: Excepción de seguridad: " + e.getMessage());
+        }
+    }
+
+    private void init(){
+        Log.d(TAG, "init: Iniciando");
+        GoogleApiClient mGoogleApiClient = new GoogleApiClient.Builder(this).addApi(Places.GEO_DATA_API).addApi(Places.PLACE_DETECTION_API).enableAutoManage(this, this).build();
+        //Centrar cámara en ubicación actual y asignarla como origen
+        mGps.setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View v) {
+                Log.d(TAG, "onClick: Clic en ícono de GPS");
+                moveCamera(currentLatLng, DEFAUL_ZOOM, getString(R.string.myLocation));
+            }
+        });
+    }
+
+    private void moveCamera(LatLng latLng, float zoom, String title){
+        Log.d(TAG, "moveCamera: Moviendo la cámara a:\nLat: " + latLng.latitude + "\nLng: " + latLng.longitude);
+        mMap.animateCamera(CameraUpdateFactory.newLatLngZoom(latLng, zoom));
+
+        if(!title.equals(getString(R.string.myLocation))) {
+            MarkerOptions options = new MarkerOptions().position(latLng).title(title);
+            mMap.clear();
+            markerPoints.clear();
+            mMap.addMarker(options);
+        }
+        if(originLatLng != latLng) {
+            destinationLatLng = latLng;
+            Log.d(TAG, "moveCamera: Valor asigando a destinationLatLng: " + destinationLatLng);
+        }else{
+            Log.w(TAG, "moveCamera: Se ha intentado asignar el valor de origen al destino, pero ha sido evitado.");
+        }
+    }
+
     @Override
     public void onConnectionFailed(@NonNull ConnectionResult connectionResult) {
         Log.e(TAG, "onConnectionFailed: Error de conexión.");
@@ -353,87 +526,8 @@ public class ProviderMap extends FragmentActivity implements OnMapReadyCallback,
             }
         }
     }
-    private void getDeviceLocation(){
-        Log.d(TAG, "getDeviceLocation: Obteniendo la ubicación actual del dispositivo");
-        mFusedLocationProviderClient = LocationServices.getFusedLocationProviderClient(this);
-        try{
-            if(mLocationPermissionGranted){
-                Task location = mFusedLocationProviderClient.getLastLocation();
-                location.addOnCompleteListener(new OnCompleteListener() {
-                    @Override
-                    public void onComplete(@NonNull Task task) {
-                        if(task.isSuccessful()){
-                            Log.d(TAG, "onComplete: ¡Ubicación encontrada!");
-                            Location currentLocation = (Location) task.getResult();
 
-                            currentLatLng = new LatLng(currentLocation.getLatitude(), currentLocation.getLongitude());
-                            originLatLng = currentLatLng;
-                            moveCamera(currentLatLng, DEFAUL_ZOOM, "Mi ubicación");
-
-                        }else{
-                            Log.d(TAG, "onComplete: La ubicación actual es nula");
-                            Toast.makeText(ProviderMap.this, "Incapaz de conseguir ubicación actual", Toast.LENGTH_SHORT).show();
-                        }
-                    }
-                });
-            }
-        }catch (SecurityException e){
-            Log.e(TAG, "getDeviceLocation: Excepción de seguridad: " + e.getMessage());
-        }
-    }
-    private void moveCamera(LatLng latLng, float zoom, String title){
-        Log.d(TAG, "moveCamera: Moviendo la cámara a:\nLat: " + latLng.latitude + "\nLng: " + latLng.longitude);
-        mMap.animateCamera(CameraUpdateFactory.newLatLngZoom(latLng, zoom));
-
-        if(!title.equals("Mi ubicación")) {
-            MarkerOptions options = new MarkerOptions().position(latLng).title(title);
-            mMap.clear();
-            markerPoints.clear();
-            mMap.addMarker(options);
-        }
-        if(originLatLng != latLng) {
-            destinationLatLng = latLng;
-            Log.d(TAG, "moveCamera: Valor asigando a destinationLatLng: " + destinationLatLng);
-        }else{
-            Log.w(TAG, "moveCamera: Se ha intentado asignar el valor de origen al destino, pero ha sido evitado.");
-        }
-    }
-
-    private void init(){
-        Log.d(TAG, "init: Iniciando");
-        mGoogleApiClient = new GoogleApiClient.Builder(this).addApi(Places.GEO_DATA_API).addApi(Places.PLACE_DETECTION_API).enableAutoManage(this, this).build();
-        //Centrar cámara en ubicación actual y asignarla como origen
-        mGps.setOnClickListener(new View.OnClickListener() {
-            @Override
-            public void onClick(View v) {
-                Log.d(TAG, "onClick: Clic en ícono de GPS");
-                getDeviceLocation();
-                originLatLng = currentLatLng;
-                Toast.makeText(ProviderMap.this, R.string.currentSet, Toast.LENGTH_SHORT).show();
-            }
-        });
-    }
-
-    @Override
-    public void onMapReady(GoogleMap googleMap) {
-        Toast.makeText(this, "Mapa listo", Toast.LENGTH_SHORT).show();
-        mMap = googleMap;
-        markerPoints.clear();
-        if (mLocationPermissionGranted) {
-            getDeviceLocation();
-
-            if (ActivityCompat.checkSelfPermission(this, Manifest.permission.ACCESS_FINE_LOCATION)
-                    != PackageManager.PERMISSION_GRANTED && ActivityCompat.checkSelfPermission(this,
-                    Manifest.permission.ACCESS_COARSE_LOCATION) != PackageManager.PERMISSION_GRANTED) {
-                return;
-            }
-            mMap.setMyLocationEnabled(true);
-            mMap.getUiSettings().setMyLocationButtonEnabled(false);
-
-            init();
-        }
-    }
-    /**Menú lateral**/
+    /**Menú lateral*/
     @Override
     public boolean onOptionsItemSelected(MenuItem item) {
         switch (item.getItemId()) {
@@ -449,7 +543,7 @@ public class ProviderMap extends FragmentActivity implements OnMapReadyCallback,
         return super.onOptionsItemSelected(item);
     }
 
-    /**Métodos de enrutamiento**/
+    /**Métodos de enrutamiento*/
     //Ejecutando enrutamiento
     public void routing(LatLng origin, LatLng destination){
         //Este código debe ir encerrado dentro de condiciones pues debe comportarse distinto según la opción elegida por el usuario en la pantalla anterior
@@ -579,7 +673,7 @@ public class ProviderMap extends FragmentActivity implements OnMapReadyCallback,
             //parserTask.execute(result);
         }
     }
-    /**Métodos para convertir la información**/
+    /**Métodos para convertir la información*/
     private List<List<HashMap<String, String>>> parserTask(String... jsonData) {
         Log.d(TAG, "ParserTask: Recibiendo: " + jsonData);
         JSONObject jObject;
@@ -654,6 +748,7 @@ public class ProviderMap extends FragmentActivity implements OnMapReadyCallback,
     /**
      * A class to parse the Google Places in JSON format
      */
+    /**
     private class ParserTask extends AsyncTask<String, Integer, List<List<HashMap<String, String>>>> {
 
         // Parsing the data in non-ui thread
@@ -732,4 +827,5 @@ public class ProviderMap extends FragmentActivity implements OnMapReadyCallback,
             }
         }
     }
+    */
 }

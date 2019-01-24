@@ -19,8 +19,11 @@ import android.widget.Spinner;
 import android.widget.TextView;
 import android.widget.Toast;
 
+import com.google.firebase.auth.FirebaseAuth;
+import com.google.firebase.auth.FirebaseUser;
+
 public class MainActivity extends AppCompatActivity implements AdapterView.OnItemSelectedListener {
-    private Button btnseguir;
+    private Button btnseguir, btnProv;
     private TextView help;
     private int spOption, travelWay = 0;
     //Layouts
@@ -42,6 +45,7 @@ public class MainActivity extends AppCompatActivity implements AdapterView.OnIte
         // Apply the adapter to the spinner
         spservice.setAdapter(adapter);
         btnseguir = findViewById(R.id.btnseguir);
+        btnProv = findViewById(R.id.btnprov);
         btnseguir.setEnabled(false);
         help = findViewById(R.id.help);
         help.setEnabled(false);
@@ -58,7 +62,6 @@ public class MainActivity extends AppCompatActivity implements AdapterView.OnIte
         chGas = findViewById(R.id.chbgas);
         chFlatTire = findViewById(R.id.chbponche);
         ofOrder = findViewById(R.id.ofOrder);
-
     }
 
     public void showMap (View view){

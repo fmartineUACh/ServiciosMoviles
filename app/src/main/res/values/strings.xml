@@ -14,7 +14,13 @@
     <string name="destinationSet">Marker set as Destination</string>
     <string name="locationSetError">Error setting marker. Verify that a marker exists</string>
     <string name="title_activity_provider_map">Provider Map</string>
-    <string name="distance">Distance: </string>
+    <string name="btn_accept">Accept job</string>
+    <string name="btn_cancel">Cancel job</string>
+    <string name="mapReady">Map ready</string>
+    <string name="myLocation">Current location</string>
+    <string name="aDistance">Distance: </string>
+    <string name="request">Request Service</string>
+    <string name="requestSended">Request Sended</string>
 
     <string-array name="slabels">
         <item>Personal transport</item>
@@ -46,6 +52,5 @@
     <!--OrderFood-->
     <string name="ofLabel">Please place your order.</string>
     <string name="ofHelp">Place a food order by selecting a restaruant to place your order. By default, you rorder is delivered to your curent location but you can set a different delivering location.</string>
-    <string name="btn_accept">Accept job</string>
 
 </resources>

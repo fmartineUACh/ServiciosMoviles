@@ -21,8 +21,9 @@
             android:name="com.google.android.gms.version"
             android:value="@integer/google_play_services_version" />
         <meta-data
-        android:name="com.google.android.geo.API_KEY"
-        android:value="@string/api_key" />
+            android:name="com.google.android.geo.API_KEY"
+            android:value="@string/api_key" />
+
         <activity
             android:name=".MainActivity"
             android:label="@string/app_name"
@@ -38,8 +39,9 @@
             android:label="@string/Map"
             android:screenOrientation="portrait" />
         <activity
-            android:name="mx.uach.newcompass3.ProviderMap"
+            android:name=".ProviderMap"
             android:label="@string/title_activity_provider_map" />
+        <activity android:name="mx.uach.NewCompass3.LoginActivity"></activity>
     </application>
 
 </manifest>
