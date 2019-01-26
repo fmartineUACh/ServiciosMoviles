@@ -7,10 +7,11 @@ package mx.uach.newcompass3.Objects;
 public class ActiveService {
     private int service;
     private int attending;
+    private int roadSupportIndex;
     private double originlat;
     private double originlon;
-    private double destinitylat;
-    private double destinitylon;
+    private double destinationlat;
+    private double destinationlon;
     private float distance;
     private String key;
     private String client;
@@ -20,13 +21,13 @@ public class ActiveService {
     public ActiveService() {
     }
 
-    public ActiveService(int service, int attending, double originlat, double originlon, double destinitylat, double destinitylon, String client, String date, String rTime) {
+    public ActiveService(int service, int attending, double originlat, double originlon, double destinationlat, double destinationlon, String client, String date, String rTime) {
         this.service = service;
         this.attending = attending;
         this.originlat = originlat;
         this.originlon = originlon;
-        this.destinitylat = destinitylat;
-        this.destinitylon = destinitylon;
+        this.destinationlat = destinationlat;
+        this.destinationlon = destinationlon;
         this.client = client;
         this.date = date;
         this.rTime = rTime;
@@ -48,6 +49,10 @@ public class ActiveService {
         this.attending = attending;
     }
 
+    public int getRoadSupportIndex() { return roadSupportIndex; }
+
+    public void setRoadSupportIndex(int roadSupportIndex) { this.roadSupportIndex = roadSupportIndex; }
+
     public double getOriginlat() {
         return originlat;
     }
@@ -64,20 +69,20 @@ public class ActiveService {
         this.originlon = originlon;
     }
 
-    public double getDestinitylat() {
-        return destinitylat;
+    public double getDestinationlat() {
+        return destinationlat;
     }
 
-    public void setDestinitylat(double destinitylat) {
-        this.destinitylat = destinitylat;
+    public void setDestinationlat(double destinationlat) {
+        this.destinationlat = destinationlat;
     }
 
-    public double getDestinitylon() {
-        return destinitylon;
+    public double getDestinationlon() {
+        return destinationlon;
     }
 
-    public void setDestinitylon(double destinitylon) {
-        this.destinitylon = destinitylon;
+    public void setDestinationlon(double destinationlon) {
+        this.destinationlon = destinationlon;
     }
 
     public float getDistance() {return distance;}

@@ -5,8 +5,8 @@ public class RequestingService {
     private int attending;
     private double originlat;
     private double originlon;
-    private double destinitylat;
-    private double destinitylon;
+    private double destinationlat;
+    private double destinationlon;
     private String client;
     private String date;
     private String rTime;
@@ -14,13 +14,13 @@ public class RequestingService {
     public RequestingService() {
     }
 
-    public RequestingService(int service, int attending, double originlat, double originlon, double destinitylat, double destinitylon, String client, String date, String rTime) {
+    public RequestingService(int service, int attending, double originlat, double originlon, double destinationlat, double destinationlon, String client, String date, String rTime) {
         this.service = service;
         this.attending = attending;
         this.originlat = originlat;
         this.originlon = originlon;
-        this.destinitylat = destinitylat;
-        this.destinitylon = destinitylon;
+        this.destinationlat = destinationlat;
+        this.destinationlon = destinationlon;
         this.client = client;
         this.date = date;
         this.rTime = rTime;
@@ -58,20 +58,20 @@ public class RequestingService {
         this.originlon = originlon;
     }
 
-    public double getDestinitylat() {
-        return destinitylat;
+    public double getDestinationlat() {
+        return destinationlat;
     }
 
-    public void setDestinitylat(double destinitylat) {
-        this.destinitylat = destinitylat;
+    public void setDestinationlat(double destinationlat) {
+        this.destinationlat = destinationlat;
     }
 
-    public double getDestinitylon() {
-        return destinitylon;
+    public double getDestinationlon() {
+        return destinationlon;
     }
 
-    public void setDestinitylon(double destinitylon) {
-        this.destinitylon = destinitylon;
+    public void setDestinationlon(double destinationlon) {
+        this.destinationlon = destinationlon;
     }
 
     public String getClient() {

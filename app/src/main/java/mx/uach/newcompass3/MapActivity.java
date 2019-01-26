@@ -89,6 +89,7 @@ import mx.uach.newcompass3.Objects.ActiveService;
 import mx.uach.newcompass3.Objects.FirebaseReferences;
 import mx.uach.newcompass3.Objects.ReleasedService;
 import mx.uach.newcompass3.Objects.RequestingService;
+import mx.uach.newcompass3.Objects.RoadSupport;
 import mx.uach.newcompass3.models.PlaceInfo;
 
 import static java.lang.StrictMath.abs;
@@ -292,15 +293,18 @@ public class MapActivity extends FragmentActivity implements OnMapReadyCallback,
         mRouting.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View v) {
-                Log.d(TAG, "onCLick: Preparando enrutamiento");
-                if(travelWay == 0){
-                    Log.d(TAG, "onCLick: Enviando enrutameinto estándar\noriginLatLng: " + originLatLng + "\ndestinationLatLng: " + destinationLatLng);
+                Log.d(TAG, "mRouting: Preparando enrutamiento");
+                if (spOption == 3){
+                    Log.d(TAG, "mRouting: Servicio de asistencia vial. Enviando un solo conjunto de coordenadas");
+                    originLatLng = destinationLatLng;
+                }else if(travelWay == 0){
+                    Log.d(TAG, "mRouting: Enviando enrutameinto estándar\noriginLatLng: " + originLatLng + "\ndestinationLatLng: " + destinationLatLng);
                     routing(v, originLatLng, destinationLatLng);
                 }else{
-                    Log.d(TAG, "onCLick: Enviando enrutameinto invertido\noriginLatLng: " + destinationLatLng + "\ndestinationLatLng: " + originLatLng);
+                    Log.d(TAG, "mRouting: Enviando enrutameinto invertido\noriginLatLng: " + destinationLatLng + "\ndestinationLatLng: " + originLatLng);
                     routing(v, destinationLatLng, originLatLng);
                 }
-                Log.d(TAG, "onCLick: Enrutamiento enviado");
+                Log.d(TAG, "mRouting: Enrutamiento enviado");
                 btnRequest.setVisibility(View.VISIBLE);
             }
         });
@@ -312,9 +316,19 @@ public class MapActivity extends FragmentActivity implements OnMapReadyCallback,
                 if (originLatLng == null || destinationLatLng == null) {
                     Log.e(TAG, "btnRequest: Coordenadas con valor nulo.");
                 }else{
-                    activeRef.push().setValue(new RequestingService(spOption, 0,
+                    DatabaseReference lastRef = activeRef.push();
+                    lastRef.setValue(new RequestingService(spOption, 0,
                             originLatLng.latitude, originLatLng.longitude, destinationLatLng.latitude,
                             destinationLatLng.longitude, cClient, df.format(cDate), tf.format(cDate)));
+                    if (spOption == 3){
+                        Intent receiveIntent = getIntent();
+                        RoadSupport rs = new RoadSupport(receiveIntent.getBooleanExtra("rsFlatTire", false),
+                                receiveIntent.getBooleanExtra("rsGas", false),
+                                receiveIntent.getBooleanExtra("rsLeak", false),
+                                receiveIntent.getBooleanExtra("rsBrake", false),
+                                receiveIntent.getBooleanExtra("rsBattery", false));
+                        lastRef.child("roadSupport").setValue(rs);
+                    }
                     mMap.clear();
                     btnRequest.setVisibility(View.INVISIBLE);
                     moveCamera(currentLatLng, DEFAUL_ZOOM, getString(R.string.myLocation));
@@ -400,8 +414,10 @@ public class MapActivity extends FragmentActivity implements OnMapReadyCallback,
 
                             currentLatLng = new LatLng(currentLocation.getLatitude(), currentLocation.getLongitude());
                             originLatLng = currentLatLng;
-                            moveCamera(originLatLng, DEFAUL_ZOOM, getString(R.string.myLocation));
-
+                            if (spOption == 3){
+                                destinationLatLng = originLatLng;
+                            }
+                            moveCamera(currentLatLng, DEFAUL_ZOOM, getString(R.string.myLocation));
                         }else{
                             Log.d(TAG, "onComplete: La ubicación actual es nula");
                             Toast.makeText(MapActivity.this, "Incapaz de conseguir ubicación actual", Toast.LENGTH_SHORT).show();

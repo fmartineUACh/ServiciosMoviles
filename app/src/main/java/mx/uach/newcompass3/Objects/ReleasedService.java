@@ -4,8 +4,8 @@ public class ReleasedService {
     private int service;
     private double originlat;
     private double originlon;
-    private double destinitylat;
-    private double destinitylon;
+    private double destinationlat;
+    private double destinationlon;
     private String client;
     private String driver;
     private String date;
@@ -15,12 +15,12 @@ public class ReleasedService {
     public ReleasedService() {
     }
 
-    public ReleasedService(int service, double originlat, double originlon, double destinitylat, double destinitylon, String client, String driver, String date, String rTime, String aTime) {
+    public ReleasedService(int service, double originlat, double originlon, double destinationlat, double destinationlon, String client, String driver, String date, String rTime, String aTime) {
         this.service = service;
         this.originlat = originlat;
         this.originlon = originlon;
-        this.destinitylat = destinitylat;
-        this.destinitylon = destinitylon;
+        this.destinationlat = destinationlat;
+        this.destinationlon = destinationlon;
         this.client = client;
         this.driver = driver;
         this.date = date;
@@ -52,20 +52,20 @@ public class ReleasedService {
         this.originlon = originlon;
     }
 
-    public double getDestinitylat() {
-        return destinitylat;
+    public double getDestinationlat() {
+        return destinationlat;
     }
 
-    public void setDestinitylat(double destinitylat) {
-        this.destinitylat = destinitylat;
+    public void setDestinationlat(double destinationlat) {
+        this.destinationlat = destinationlat;
     }
 
-    public double getDestinitylon() {
-        return destinitylon;
+    public double getDestinationlon() {
+        return destinationlon;
     }
 
-    public void setDestinitylon(double destinitylon) {
-        this.destinitylon = destinitylon;
+    public void setDestinationlon(double destinationlon) {
+        this.destinationlon = destinationlon;
     }
 
     public String getClient() {

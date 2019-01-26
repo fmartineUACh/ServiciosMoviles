@@ -72,6 +72,7 @@ import mx.uach.newcompass3.Objects.ActiveService;
 import mx.uach.newcompass3.Objects.FirebaseReferences;
 import mx.uach.newcompass3.Objects.ReleasedService;
 import mx.uach.newcompass3.Objects.RequestingService;
+import mx.uach.newcompass3.Objects.RoadSupport;
 import mx.uach.newcompass3.models.PlaceInfo;
 
 public class ProviderMap extends FragmentActivity implements OnMapReadyCallback, GoogleApiClient.OnConnectionFailedListener {
@@ -93,7 +94,9 @@ public class ProviderMap extends FragmentActivity implements OnMapReadyCallback,
     private LatLng currentLatLng, originLatLng, destinationLatLng;
     private GeoApiContext mGeoApiContext;
     private List<ActiveService> serviciosActivos = new ArrayList<ActiveService>();
+    private List<RoadSupport> asistenicaVialRef = new ArrayList<>();
     private ActiveService activo;
+    private RoadSupport rsActivo;
     //private LocationListener mLocationListener;
     private float rDistance = 0, mDistance = 0;
     private String rDistUnit;
@@ -142,11 +145,20 @@ public class ProviderMap extends FragmentActivity implements OnMapReadyCallback,
                 String[] label;
                 label = getResources().getStringArray(R.array.slabels);
                 Toast.makeText(ProviderMap.this, "Item: " + label[activo.getService()], Toast.LENGTH_SHORT).show();
-                LatLng origin, destinity;
+                LatLng origin;
                 origin = new LatLng(activo.getOriginlat(), activo.getOriginlon());
-                destinity = new LatLng(activo.getDestinitylat(), activo.getDestinitylon());
                 drawing = true;
-                routing(origin, destinity);
+                if (activo.getService() != 3) {
+                    LatLng destination = new LatLng(activo.getDestinationlat(), activo.getDestinationlon());
+                    routing(origin, destination);
+                    rsActivo = null;
+                }else{
+                    rsActivo = asistenicaVialRef.get(activo.getRoadSupportIndex());
+                    MarkerOptions options = new MarkerOptions().position(origin).title(label[3]);
+                    mMap.clear();
+                    mMap.addMarker(options);
+                    moveCamera(origin, DEFAUL_ZOOM, label[3]);
+                }
                 drawerLayout.closeDrawers();
                 btnAccept.setVisibility(View.VISIBLE);
             }
@@ -162,7 +174,7 @@ public class ProviderMap extends FragmentActivity implements OnMapReadyCallback,
                 btnRelease.setVisibility(View.VISIBLE);
                 drawing = true;
                 originLatLng = new LatLng(activo.getOriginlat(), activo.getOriginlon());
-                destinationLatLng = new LatLng(activo.getDestinitylat(), activo.getDestinitylon());
+                destinationLatLng = new LatLng(activo.getDestinationlat(), activo.getDestinationlon());
                 routing(currentLatLng, originLatLng);
             }
         });
@@ -191,6 +203,11 @@ public class ProviderMap extends FragmentActivity implements OnMapReadyCallback,
                 Log.d(TAG, "onChildAdded: Inserción " + children);
                 Log.d(TAG, "onChildAdded: Hijo a crear: " + dataSnapshot);
                 ActiveService servicio = dataSnapshot.getValue(ActiveService.class);
+                if (servicio.getService() == 3){
+                    RoadSupport apoyoVial = dataSnapshot.child("roadSupport").getValue(RoadSupport.class);
+                    asistenicaVialRef.add(apoyoVial);
+                    servicio.setRoadSupportIndex(asistenicaVialRef.indexOf(apoyoVial));
+                }
                 //Calcular distancia por enrutamiento
                 if (currentLatLng == null) {
                     Log.d(TAG, "onChildAdded: Ubicación actual nula. No es posible generar enrutamiento.");
@@ -201,7 +218,7 @@ public class ProviderMap extends FragmentActivity implements OnMapReadyCallback,
                 assert servicio != null;
                 Log.d(TAG, "onChildAdded:\nServicio: " + servicio.getService() + "\n¿Atendiendo? " + servicio.getAttending()
                         + "\nOrigen: " + servicio.getOriginlat() + ", " + servicio.getOriginlon()
-                        + "\nDestino: " + servicio.getDestinitylat() + ", " + servicio.getDestinitylon()
+                        + "\nDestino: " + servicio.getDestinationlat() + ", " + servicio.getDestinationlon()
                         + "\nDistancia: " + servicio.getDistance() + " m.");
                 if (servicio.getAttending() == 0) {
                     Log.d(TAG, "onChildAdded: Añadiendo objeto: " + servicio);
@@ -223,7 +240,7 @@ public class ProviderMap extends FragmentActivity implements OnMapReadyCallback,
                     assert servicio != null;
                     Log.d(TAG, "onChildChanged:\nServicio: " + servicio.getService() + "\n¿Atendiendo? " + servicio.getAttending()
                             + "\nOrigen: " + servicio.getOriginlat() + ", " + servicio.getOriginlon()
-                            + "\nDestino: " + servicio.getDestinitylat() + ", " + servicio.getDestinitylon());
+                            + "\nDestino: " + servicio.getDestinationlat() + ", " + servicio.getDestinationlon());
                     Log.d(TAG, "onChildChanged: Modificando objeto: " + servicio);
                     int index = servicesKeys.indexOf(dataSnapshot.getKey());
                     Log.d(TAG, "onChildChanged: Índice de elemento a modificar: " + index);
@@ -232,9 +249,21 @@ public class ProviderMap extends FragmentActivity implements OnMapReadyCallback,
                         onChildAdded(dataSnapshot, s);
                     } else if (index >= 0) {
                         if (servicio.getAttending() == 0) {
+                            if (servicio.getService() == 3) {
+                                RoadSupport apoyoVial = dataSnapshot.child("roadSupport").getValue(RoadSupport.class);
+                                asistenicaVialRef.set((serviciosActivos.get(index)).getRoadSupportIndex(), apoyoVial);
+                                if ((serviciosActivos.get(index)).getService() != 3) {
+                                    servicio.setRoadSupportIndex(asistenicaVialRef.indexOf(apoyoVial));
+                                }
+                            }else if ((serviciosActivos.get(index)).getService() == 3){
+                                asistenicaVialRef.remove((serviciosActivos.get(index)).getRoadSupportIndex());
+                            }
                             serviciosActivos.set(index, servicio);
                             Log.d(TAG, "onChildChanged: Objeto modificado en la lista.");
                         } else {
+                            if (servicio.getService() == 3){
+                                asistenicaVialRef.remove((serviciosActivos.get(index)).getRoadSupportIndex());
+                            }
                             serviciosActivos.remove(index);
                             servicesKeys.remove(index);
                             Log.d(TAG, "onChildChanged: El objeto tiene la propiedad Attending como verdadera y ha sido retirado de la lista.");
@@ -255,11 +284,14 @@ public class ProviderMap extends FragmentActivity implements OnMapReadyCallback,
                 assert servicio != null;
                 Log.d(TAG, "onChildRemoved:\nServicio: " + servicio.getService() + "\n¿Atendiendo? " + servicio.getAttending()
                         + "\nOrigen: " + servicio.getOriginlat() + ", " + servicio.getOriginlon()
-                        + "\nDestino: " + servicio.getDestinitylat() + ", " + servicio.getDestinitylon());
+                        + "\nDestino: " + servicio.getDestinationlat() + ", " + servicio.getDestinationlon());
                 Log.d(TAG, "onChildRemoved: eliminando objeto: " + servicio);
                 int index = servicesKeys.indexOf(dataSnapshot.getKey());
                 Log.d(TAG, "onChildRemoved: Índice de elemento a eliminar: " + index);
                 try {
+                    if (servicio.getService() == 3){
+                        asistenicaVialRef.remove((serviciosActivos.get(index)).getRoadSupportIndex());
+                    }
                     serviciosActivos.remove(index);
                     servicesKeys.remove(index);
                     updateAdapter();
@@ -320,7 +352,10 @@ public class ProviderMap extends FragmentActivity implements OnMapReadyCallback,
                 location1.setLatitude(currentLatLng.longitude);
                 location2.setLatitude(destinationLatLng.latitude);
                 location2.setLatitude(destinationLatLng.longitude);
-                if(location1.distanceTo(location2) < 10){
+                if (activo.getService() == 3){
+                    btnRelease.setVisibility(View.VISIBLE);
+                }
+                if(location1.distanceTo(location2) < 10 && activo.getService() != 3){
                     releaseService();
                 }
             }
@@ -392,10 +427,16 @@ public class ProviderMap extends FragmentActivity implements OnMapReadyCallback,
         SimpleDateFormat tf = new SimpleDateFormat("kk:mm:ss");
         String driver = "Test driver";
         String cClient = "Test client";
-        releasedRef.push().setValue(new ReleasedService(activo.getService(),
-                activo.getOriginlat(), activo.getOriginlon(), activo.getDestinitylat(),
-                activo.getDestinitylon(), cClient, driver, activo.getDate(), activo.getrTime(), tf.format(cDate)));
+        DatabaseReference nRel = releasedRef.push();
+        nRel.setValue(new ReleasedService(activo.getService(),
+                activo.getOriginlat(), activo.getOriginlon(), activo.getDestinationlat(),
+                activo.getDestinationlon(), cClient, driver, activo.getDate(), activo.getrTime(), tf.format(cDate)));
+        if (activo.getService() == 3){
+            nRel.child("roadSupport").setValue(rsActivo);
+            rsActivo = null;
+        }
         activeRef.child(activo.getKey()).removeValue();
+        activo = null;
     }
 
     /**Implementación de mapa*/
