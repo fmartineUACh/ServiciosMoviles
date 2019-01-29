@@ -75,7 +75,7 @@ public class MainActivity extends AppCompatActivity implements AdapterView.OnIte
         intent.putExtra("rsGas", chGas.isChecked());
         intent.putExtra("rsFlatTire", chFlatTire.isChecked());
         //Orden de comida
-        intent.putExtra("foodOrder", ofOrder.getText());
+        intent.putExtra("fOrder", ofOrder.getText());
         startActivity(intent);
     }
     public void showProv (View view){

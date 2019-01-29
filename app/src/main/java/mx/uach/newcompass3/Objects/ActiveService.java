@@ -17,6 +17,7 @@ public class ActiveService {
     private String client;
     private String date;
     private String rTime;
+    private String fOrder;
 
     public ActiveService() {
     }
@@ -104,4 +105,12 @@ public class ActiveService {
     public String getrTime() { return rTime; }
 
     public void setrTime(String rTime) { this.rTime = rTime; }
+
+    public String getfOrder() {
+        return fOrder;
+    }
+
+    public void setfOrder(String fOrder) {
+        this.fOrder = fOrder;
+    }
 }

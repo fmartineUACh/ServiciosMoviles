@@ -207,6 +207,8 @@ public class ProviderMap extends FragmentActivity implements OnMapReadyCallback,
                     RoadSupport apoyoVial = dataSnapshot.child("roadSupport").getValue(RoadSupport.class);
                     asistenicaVialRef.add(apoyoVial);
                     servicio.setRoadSupportIndex(asistenicaVialRef.indexOf(apoyoVial));
+                }else if (servicio.getService() == 4){
+                    servicio.setfOrder((String) dataSnapshot.child("fOrder").getValue());
                 }
                 //Calcular distancia por enrutamiento
                 if (currentLatLng == null) {

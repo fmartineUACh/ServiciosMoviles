@@ -328,6 +328,9 @@ public class MapActivity extends FragmentActivity implements OnMapReadyCallback,
                                 receiveIntent.getBooleanExtra("rsBrake", false),
                                 receiveIntent.getBooleanExtra("rsBattery", false));
                         lastRef.child("roadSupport").setValue(rs);
+                    }else if (spOption == 4){
+                        Intent receiveIntent = getIntent();
+                        lastRef.child("fOrder").setValue(receiveIntent.getStringExtra("fOrder"));
                     }
                     mMap.clear();
                     btnRequest.setVisibility(View.INVISIBLE);
