@@ -6,7 +6,7 @@ package mx.uach.newcompass3.Objects;
 
 public class ActiveService {
     private int service;
-    private int attending;
+    private Boolean attending;
     private int roadSupportIndex;
     private double originlat;
     private double originlon;
@@ -22,7 +22,7 @@ public class ActiveService {
     public ActiveService() {
     }
 
-    public ActiveService(int service, int attending, double originlat, double originlon, double destinationlat, double destinationlon, String client, String date, String rTime) {
+    public ActiveService(int service, Boolean attending, double originlat, double originlon, double destinationlat, double destinationlon, String client, String date, String rTime) {
         this.service = service;
         this.attending = attending;
         this.originlat = originlat;
@@ -42,11 +42,11 @@ public class ActiveService {
         this.service = service;
     }
 
-    public int getAttending() {
+    public Boolean getAttending() {
         return attending;
     }
 
-    public void setAttending(int attending) {
+    public void setAttending(Boolean attending) {
         this.attending = attending;
     }
 

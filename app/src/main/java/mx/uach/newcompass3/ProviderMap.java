@@ -167,7 +167,7 @@ public class ProviderMap extends FragmentActivity implements OnMapReadyCallback,
             @Override
             public void onClick(View v) {
                 working = 1;
-                activeRef.child(activo.getKey()).child("attending").setValue(1);
+                activeRef.child(activo.getKey()).child("attending").setValue(true);
                 listView.setVisibility(View.INVISIBLE);
                 btnAccept.setVisibility(View.INVISIBLE);
                 btnCancel.setVisibility(View.VISIBLE);
@@ -183,7 +183,7 @@ public class ProviderMap extends FragmentActivity implements OnMapReadyCallback,
             public void onClick(View v) {
                 working = 0;
                 mMap.clear();
-                activeRef.child(activo.getKey()).child("attending").setValue(0);
+                activeRef.child(activo.getKey()).child("attending").setValue(false);
                 listView.setVisibility(View.VISIBLE);
                 btnCancel.setVisibility(View.INVISIBLE);
                 btnRelease.setVisibility(View.INVISIBLE);
@@ -222,7 +222,7 @@ public class ProviderMap extends FragmentActivity implements OnMapReadyCallback,
                         + "\nOrigen: " + servicio.getOriginlat() + ", " + servicio.getOriginlon()
                         + "\nDestino: " + servicio.getDestinationlat() + ", " + servicio.getDestinationlon()
                         + "\nDistancia: " + servicio.getDistance() + " m.");
-                if (servicio.getAttending() == 0) {
+                if (!servicio.getAttending()) {
                     Log.d(TAG, "onChildAdded: Añadiendo objeto: " + servicio);
                     Log.d(TAG, "onChildAdded: CurrentLatLng: " + currentLatLng + " Origin: " + new LatLng(servicio.getOriginlat(), servicio.getOriginlon()));
                     serviciosActivos.add(servicio);
@@ -250,7 +250,7 @@ public class ProviderMap extends FragmentActivity implements OnMapReadyCallback,
                         Log.d(TAG, "onChildChanged: Elemento que vuelve a ser activo. Trasladando a onChildAdded");
                         onChildAdded(dataSnapshot, s);
                     } else if (index >= 0) {
-                        if (servicio.getAttending() == 0) {
+                        if (!servicio.getAttending()) {
                             if (servicio.getService() == 3) {
                                 RoadSupport apoyoVial = dataSnapshot.child("roadSupport").getValue(RoadSupport.class);
                                 asistenicaVialRef.set((serviciosActivos.get(index)).getRoadSupportIndex(), apoyoVial);
@@ -615,8 +615,8 @@ public class ProviderMap extends FragmentActivity implements OnMapReadyCallback,
                     ProviderMap.DownloadTask dt = new ProviderMap.DownloadTask();
                     String result = dt.execute(url).get();
                     Log.d(TAG, "Routing: Proceso asíncrono devolvió: " + result);
-                    List<List<HashMap<String, String>>> routes = parserTask(result);
-                    mapTask(routes);
+                    List<List<HashMap<String, String>>> routes = parsing(result);
+                    mapping(routes);
                 } catch (NullPointerException e) {
                     Toast.makeText(getApplicationContext(), getString(R.string.routeError), Toast.LENGTH_LONG).show();
                     Log.e(TAG, "routing: Error de enrutamiento: " + e.getMessage(), e);
@@ -712,13 +712,13 @@ public class ProviderMap extends FragmentActivity implements OnMapReadyCallback,
             Log.d(TAG, "DownloadTask: onPostExecute: result: " + result);
             super.onPostExecute(result);
 
-            //ProviderMap.ParserTask parserTask = new ProviderMap.ParserTask();
-            //parserTask.execute(result);
+            //ProviderMap.parsing parsing = new ProviderMap.parsing();
+            //parsing.execute(result);
         }
     }
     /**Métodos para convertir la información*/
-    private List<List<HashMap<String, String>>> parserTask(String... jsonData) {
-        Log.d(TAG, "ParserTask: Recibiendo: " + jsonData);
+    private List<List<HashMap<String, String>>> parsing(String... jsonData) {
+        Log.d(TAG, "parsing: Recibiendo: " + jsonData);
         JSONObject jObject;
         List<List<HashMap<String, String>>> routes = null;
         try {
@@ -731,8 +731,8 @@ public class ProviderMap extends FragmentActivity implements OnMapReadyCallback,
         }
         return routes;
     }
-    private void mapTask(List<List<HashMap<String, String>>> result) {
-        Log.d(TAG, "mapTask: Result: " + result);
+    private void mapping(List<List<HashMap<String, String>>> result) {
+        Log.d(TAG, "mapping: Result: " + result);
         ArrayList<LatLng> points;
         PolylineOptions lineOptions = new PolylineOptions();
         lineOptions.width(2);
@@ -741,18 +741,18 @@ public class ProviderMap extends FragmentActivity implements OnMapReadyCallback,
         try {
             int cfor;
             if(result.size()==0){
-                Log.w(TAG, "mapTask: result.size no tiene valor. Se asignará un valor de 1 para el ciclo.");
+                Log.w(TAG, "mapping: result.size no tiene valor. Se asignará un valor de 1 para el ciclo.");
                 cfor = 1;
             }else{
-                Log.d(TAG, "mapTask: result.size: " + result.size());
+                Log.d(TAG, "mapping: result.size: " + result.size());
                 cfor = result.size();
             }
-            Log.d(TAG, "mapTask: Entrando a ciclo For con cfor = " + cfor);
+            Log.d(TAG, "mapping: Entrando a ciclo For con cfor = " + cfor);
             for (int i = 0; i < cfor; i++) {
                 points = new ArrayList();
 
                 List<HashMap<String, String>> path = result.get(i);
-                Log.d(TAG, "mapTask: Entrando a ciclo For con path.size = " + path.size());
+                Log.d(TAG, "mapping: Entrando a ciclo For con path.size = " + path.size());
                 for (int j = 0; j < path.size(); j++) {
                     HashMap<String, String> point = path.get(j);
 
@@ -778,7 +778,7 @@ public class ProviderMap extends FragmentActivity implements OnMapReadyCallback,
                 lineOptions.geodesic(true);
 
             }
-            Log.d(TAG, "mapTask: Almacenando Distancia: "+sDistance + ", Duración: "+sDuration);
+            Log.d(TAG, "mapping: Almacenando Distancia: "+sDistance + ", Duración: "+sDuration);
             if(drawing) {
                 // Drawing polyline in the Google Map for the i-th route
                 mMap.addPolyline(lineOptions);
@@ -792,12 +792,12 @@ public class ProviderMap extends FragmentActivity implements OnMapReadyCallback,
      * A class to parse the Google Places in JSON format
      */
     /**
-    private class ParserTask extends AsyncTask<String, Integer, List<List<HashMap<String, String>>>> {
+    private class parsing extends AsyncTask<String, Integer, List<List<HashMap<String, String>>>> {
 
         // Parsing the data in non-ui thread
         @Override
         protected List<List<HashMap<String, String>>> doInBackground(String... jsonData) {
-            Log.d(TAG, "ParserTask: Recibiendo: " + jsonData);
+            Log.d(TAG, "parsing: Recibiendo: " + jsonData);
             JSONObject jObject;
             List<List<HashMap<String, String>>> routes = null;
             try {

@@ -84,6 +84,7 @@ import java.util.Date;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.concurrent.ExecutionException;
 
 import mx.uach.newcompass3.Objects.ActiveService;
 import mx.uach.newcompass3.Objects.FirebaseReferences;
@@ -317,7 +318,7 @@ public class MapActivity extends FragmentActivity implements OnMapReadyCallback,
                     Log.e(TAG, "btnRequest: Coordenadas con valor nulo.");
                 }else{
                     DatabaseReference lastRef = activeRef.push();
-                    lastRef.setValue(new RequestingService(spOption, 0,
+                    lastRef.setValue(new RequestingService(spOption, false,
                             originLatLng.latitude, originLatLng.longitude, destinationLatLng.latitude,
                             destinationLatLng.longitude, cClient, df.format(cDate), tf.format(cDate)));
                     if (spOption == 3){
@@ -591,8 +592,8 @@ public class MapActivity extends FragmentActivity implements OnMapReadyCallback,
                 LatLngBounds.Builder builder = new LatLngBounds.Builder();
                 marker = mMap.addMarker(new MarkerOptions().position(origin).title("Origin").icon(BitmapDescriptorFactory.defaultMarker(BitmapDescriptorFactory.HUE_AZURE)));
                 builder.include(marker.getPosition());
-                marker = mMap.addMarker(new MarkerOptions().position(destination).title("destination"));
-                builder.include(marker.getPosition());
+                mMap.addMarker(new MarkerOptions().position(mMarker.getPosition()).title(mMarker.getTitle()));
+                builder.include(mMarker.getPosition());
                 LatLngBounds bounds = builder.build();
                 int padding = 200; // offset from edges of the map in pixels
                 CameraUpdate cu = CameraUpdateFactory.newLatLngBounds(bounds, padding);
@@ -603,11 +604,17 @@ public class MapActivity extends FragmentActivity implements OnMapReadyCallback,
                     Log.d(TAG, "Routing: Obteniendo url de dirección.\norigin: " + origin + "\ndestination: " + destination + "\nurl: " + url);
                     DownloadTask downloadTask = new DownloadTask();
                     // Start downloading json data from Google Directions API
-                    downloadTask.execute(url);
+                    String result = downloadTask.execute(url).get();
                     Log.d(TAG, "Routing: Descarga de datos Json realizada con éxito");
+                    List<List<HashMap<String, String>>> routes = parsing(result);
+                    mapping(routes);
                 } catch (NullPointerException e) {
                     Toast.makeText(getApplicationContext(), getString(R.string.routeError), Toast.LENGTH_LONG).show();
                     Log.e(TAG, "routing: Error de enrutamiento: " + e.getMessage(), e);
+                } catch (InterruptedException e) {
+                    e.printStackTrace();
+                } catch (ExecutionException e) {
+                    e.printStackTrace();
                 }
             }else{
                 Log.e(TAG, "Routing: Las coordenadas de origen y destino son iguales. Verifica sus valores.");
@@ -616,6 +623,83 @@ public class MapActivity extends FragmentActivity implements OnMapReadyCallback,
             Toast.makeText(getApplicationContext(), getString(R.string.noRouteData), Toast.LENGTH_LONG).show();
             Log.e(TAG, "Routing: No se tienen coordenadas para enrutamiento.");
         }
+    }
+
+    private List<List<HashMap<String, String>>> parsing(String... jsonData) {
+        Log.d(TAG, "parsing: Recibiendo: " + jsonData);
+        JSONObject jObject;
+        List<List<HashMap<String, String>>> routes = null;
+        try {
+            jObject = new JSONObject(jsonData[0]);
+            DirectionsJSONParser parser = new DirectionsJSONParser();
+
+            routes = parser.parse(jObject);
+        } catch (Exception e) {
+            e.printStackTrace();
+        }
+        return routes;
+    }
+
+    private void mapping(List<List<HashMap<String, String>>> result){
+        Log.d(TAG, "mapping: mapping: Result: " + result);
+        ArrayList<LatLng> points;
+        PolylineOptions lineOptions = new PolylineOptions();
+        lineOptions.width(2);
+        lineOptions.color(Color.BLUE);
+        float rDistance = 0;
+        String distance = "";
+        String duration = "";
+        //MarkerOptions markerOptions = new MarkerOptions();
+        try {
+            int cfor;
+            if(result.size()==0){
+                Log.w(TAG, "mapping: result.size no tiene valor. Se asignará un valor de 1 para el ciclo.");
+                cfor = 1;
+            }else{
+                Log.d(TAG, "mapping: result.size: " + result.size());
+                cfor = result.size();
+            }
+            Log.d(TAG, "mapping: Entrando a ciclo For con cfor = " + cfor);
+            for (int i = 0; i < cfor; i++) {
+                points = new ArrayList();
+                List<HashMap<String, String>> path = result.get(i);
+                Log.d(TAG, "mapping: Entrando a ciclo For con path.size = " + path.size());
+                for (int j = 0; j < path.size(); j++) {
+                    HashMap<String, String> point = path.get(j);
+
+                    if(j==0){    // Get distance from the list
+                        distance = point.get("distance");
+                        Log.d(TAG, "Calculando distancia: " + distance);
+                        continue;
+                    }else if(j==1){ // Get duration from the list
+                        duration = point.get("duration");
+                        Log.d(TAG, "Calculando duración: " + duration);
+                        continue;
+                    }
+
+                    double lat = Double.parseDouble(point.get("lat"));
+                    double lng = Double.parseDouble(point.get("lng"));
+                    LatLng position = new LatLng(lat, lng);
+
+                    points.add(position);
+                }
+
+                lineOptions.addAll(points);
+                lineOptions.width(12);
+                lineOptions.color(Color.BLUE);
+                lineOptions.geodesic(true);
+
+            }
+            String[] distanceSplit = distance.split(" ");
+            rDistance = Float.parseFloat(distanceSplit[0]);
+            Log.d(TAG, "mapping:\nDistancia: "+distance + ", Duración: "+duration);
+            // Drawing polyline in the Google Map for the i-th route
+            mMap.addPolyline(lineOptions);
+        } catch (Exception e) {
+            Toast.makeText(getApplicationContext(), "Error al generar enrutamiento. Verifica que ambos puntos sean alcanzables",  Toast.LENGTH_LONG).show();
+            Log.e("Background Task", e.toString());
+        }
+        Log.d(TAG, "mapping: Distance in meters: " + rDistance);
     }
 
     private class DownloadTask extends AsyncTask<String, Void, String> {
@@ -638,98 +722,8 @@ public class MapActivity extends FragmentActivity implements OnMapReadyCallback,
             Log.d(TAG, "DownloadTask: onPostExecute: result: " + result);
             super.onPostExecute(result);
 
-            ParserTask parserTask = new ParserTask();
-
-
-            parserTask.execute(result);
-
-        }
-    }
-
-
-    /**
-     * A class to parse the Google Places in JSON format
-     */
-    private class ParserTask extends AsyncTask<String, Integer, List<List<HashMap<String, String>>>> {
-
-        // Parsing the data in non-ui thread
-        @Override
-        protected List<List<HashMap<String, String>>> doInBackground(String... jsonData) {
-            JSONObject jObject;
-            List<List<HashMap<String, String>>> routes = null;
-
-            try {
-                jObject = new JSONObject(jsonData[0]);
-                DirectionsJSONParser parser = new DirectionsJSONParser();
-
-                routes = parser.parse(jObject);
-            } catch (Exception e) {
-                e.printStackTrace();
-            }
-            return routes;
-        }
-
-        @Override
-        protected void onPostExecute(List<List<HashMap<String, String>>> result) {
-            Log.d(TAG, "ParseTask: onPostExecute: Result: " + result);
-            ArrayList<LatLng> points;
-            PolylineOptions lineOptions = new PolylineOptions();
-            lineOptions.width(2);
-            lineOptions.color(Color.BLUE);
-            float rDistance = 0;
-            String distance = "";
-            String duration = "";
-            //MarkerOptions markerOptions = new MarkerOptions();
-            try {
-                int cfor;
-                if(result.size()==0){
-                    Log.w(TAG, "onPostExecute: result.size no tiene valor. Se asignará un valor de 1 para el ciclo.");
-                    cfor = 1;
-                }else{
-                    Log.d(TAG, "onPostExecute: result.size: " + result.size());
-                    cfor = result.size();
-                }
-                Log.d(TAG, "onPostExecute: Entrando a ciclo For con cfor = " + cfor);
-                for (int i = 0; i < cfor; i++) {
-                    points = new ArrayList();
-                    List<HashMap<String, String>> path = result.get(i);
-                    Log.d(TAG, "onPostExecute: Entrando a ciclo For con path.size = " + path.size());
-                    for (int j = 0; j < path.size(); j++) {
-                        HashMap<String, String> point = path.get(j);
-
-                        if(j==0){    // Get distance from the list
-                            distance = point.get("distance");
-                            Log.d(TAG, "Calculando distancia: " + distance);
-                            continue;
-                        }else if(j==1){ // Get duration from the list
-                            duration = point.get("duration");
-                            Log.d(TAG, "Calculando duración: " + duration);
-                            continue;
-                        }
-
-                        double lat = Double.parseDouble(point.get("lat"));
-                        double lng = Double.parseDouble(point.get("lng"));
-                        LatLng position = new LatLng(lat, lng);
-
-                        points.add(position);
-                    }
-
-                    lineOptions.addAll(points);
-                    lineOptions.width(12);
-                    lineOptions.color(Color.BLUE);
-                    lineOptions.geodesic(true);
-
-                }
-                String[] distanceSplit = distance.split(" ");
-                rDistance = Float.parseFloat(distanceSplit[0]);
-                Log.d(TAG, "onPostExecute:\nDistancia: "+distance + ", Duración: "+duration);
-                // Drawing polyline in the Google Map for the i-th route
-                mMap.addPolyline(lineOptions);
-            } catch (Exception e) {
-                Toast.makeText(getApplicationContext(), "Error al generar enrutamiento. Verifica que ambos puntos sean alcanzables",  Toast.LENGTH_LONG).show();
-                Log.e("Background Task", e.toString());
-            }
-            Log.d(TAG, "onPostExecute: Distance in meters: " + rDistance);
+            //ParserTask parserTask = new ParserTask();
+            //parserTask.execute(result);
         }
     }
     private String getDirectionsUrl(LatLng origin, LatLng dest) {

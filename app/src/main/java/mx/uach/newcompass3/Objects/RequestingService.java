@@ -2,7 +2,7 @@ package mx.uach.newcompass3.Objects;
 
 public class RequestingService {
     private int service;
-    private int attending;
+    private Boolean attending;
     private double originlat;
     private double originlon;
     private double destinationlat;
@@ -14,7 +14,7 @@ public class RequestingService {
     public RequestingService() {
     }
 
-    public RequestingService(int service, int attending, double originlat, double originlon, double destinationlat, double destinationlon, String client, String date, String rTime) {
+    public RequestingService(int service, Boolean attending, double originlat, double originlon, double destinationlat, double destinationlon, String client, String date, String rTime) {
         this.service = service;
         this.attending = attending;
         this.originlat = originlat;
@@ -34,11 +34,11 @@ public class RequestingService {
         this.service = service;
     }
 
-    public int getAttending() {
+    public Boolean getAttending() {
         return attending;
     }
 
-    public void setAttending(int attending) {
+    public void setAttending(Boolean attending) {
         this.attending = attending;
     }
 
