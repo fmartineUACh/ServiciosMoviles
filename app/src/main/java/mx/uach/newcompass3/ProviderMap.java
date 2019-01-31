@@ -426,19 +426,19 @@ public class ProviderMap extends FragmentActivity implements OnMapReadyCallback,
             if (elemento.getService() == 3){
                 RoadSupport support = asistenciaVialRef.get(elemento.getRoadSupportIndex());
                 if (support.getBattery()){
-                    supportLabel = supportLabel + "\n\tBattery";
+                    supportLabel = supportLabel + "\nBattery";
                 }
                 if (support.getBrakeFail()){
-                    supportLabel = supportLabel + "\n\tBrake Fail";
+                    supportLabel = supportLabel + "\nBrake Fail";
                 }
                 if (support.getDeflatedTire()){
-                    supportLabel = supportLabel + "\n\tDeflated tire";
+                    supportLabel = supportLabel + "\nDeflated tire";
                 }
                 if (support.getLeak()){
-                    supportLabel = supportLabel + "\n\tLeak";
+                    supportLabel = supportLabel + "\nLeak";
                 }
                 if (support.getNoGas()){
-                    supportLabel = supportLabel + "\n\tNo gas";
+                    supportLabel = supportLabel + "\nNo gas";
                 }
             }else if (elemento.getService() == 4){
                 supportLabel = supportLabel + "\n" + elemento.getfOrder();
