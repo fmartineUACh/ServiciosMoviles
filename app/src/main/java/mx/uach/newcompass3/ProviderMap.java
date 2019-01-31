@@ -94,7 +94,7 @@ public class ProviderMap extends FragmentActivity implements OnMapReadyCallback,
     private LatLng currentLatLng, originLatLng, destinationLatLng;
     private GeoApiContext mGeoApiContext;
     private List<ActiveService> serviciosActivos = new ArrayList<ActiveService>();
-    private List<RoadSupport> asistenicaVialRef = new ArrayList<>();
+    private List<RoadSupport> asistenciaVialRef = new ArrayList<>();
     private ActiveService activo;
     private RoadSupport rsActivo;
     //private LocationListener mLocationListener;
@@ -153,7 +153,7 @@ public class ProviderMap extends FragmentActivity implements OnMapReadyCallback,
                     routing(origin, destination);
                     rsActivo = null;
                 }else{
-                    rsActivo = asistenicaVialRef.get(activo.getRoadSupportIndex());
+                    rsActivo = asistenciaVialRef.get(activo.getRoadSupportIndex());
                     MarkerOptions options = new MarkerOptions().position(origin).title(label[3]);
                     mMap.clear();
                     mMap.addMarker(options);
@@ -205,8 +205,8 @@ public class ProviderMap extends FragmentActivity implements OnMapReadyCallback,
                 ActiveService servicio = dataSnapshot.getValue(ActiveService.class);
                 if (servicio.getService() == 3){
                     RoadSupport apoyoVial = dataSnapshot.child("roadSupport").getValue(RoadSupport.class);
-                    asistenicaVialRef.add(apoyoVial);
-                    servicio.setRoadSupportIndex(asistenicaVialRef.indexOf(apoyoVial));
+                    asistenciaVialRef.add(apoyoVial);
+                    servicio.setRoadSupportIndex(asistenciaVialRef.indexOf(apoyoVial));
                 }else if (servicio.getService() == 4){
                     servicio.setfOrder((String) dataSnapshot.child("fOrder").getValue());
                 }
@@ -253,18 +253,18 @@ public class ProviderMap extends FragmentActivity implements OnMapReadyCallback,
                         if (!servicio.getAttending()) {
                             if (servicio.getService() == 3) {
                                 RoadSupport apoyoVial = dataSnapshot.child("roadSupport").getValue(RoadSupport.class);
-                                asistenicaVialRef.set((serviciosActivos.get(index)).getRoadSupportIndex(), apoyoVial);
+                                asistenciaVialRef.set((serviciosActivos.get(index)).getRoadSupportIndex(), apoyoVial);
                                 if ((serviciosActivos.get(index)).getService() != 3) {
-                                    servicio.setRoadSupportIndex(asistenicaVialRef.indexOf(apoyoVial));
+                                    servicio.setRoadSupportIndex(asistenciaVialRef.indexOf(apoyoVial));
                                 }
                             }else if ((serviciosActivos.get(index)).getService() == 3){
-                                asistenicaVialRef.remove((serviciosActivos.get(index)).getRoadSupportIndex());
+                                removeRSRef((serviciosActivos.get(index)).getRoadSupportIndex());
                             }
                             serviciosActivos.set(index, servicio);
                             Log.d(TAG, "onChildChanged: Objeto modificado en la lista.");
                         } else {
                             if (servicio.getService() == 3){
-                                asistenicaVialRef.remove((serviciosActivos.get(index)).getRoadSupportIndex());
+                                removeRSRef((serviciosActivos.get(index)).getRoadSupportIndex());
                             }
                             serviciosActivos.remove(index);
                             servicesKeys.remove(index);
@@ -292,7 +292,7 @@ public class ProviderMap extends FragmentActivity implements OnMapReadyCallback,
                 Log.d(TAG, "onChildRemoved: Índice de elemento a eliminar: " + index);
                 try {
                     if (servicio.getService() == 3){
-                        asistenicaVialRef.remove((serviciosActivos.get(index)).getRoadSupportIndex());
+                        removeRSRef((serviciosActivos.get(index)).getRoadSupportIndex());
                     }
                     serviciosActivos.remove(index);
                     servicesKeys.remove(index);
@@ -314,6 +314,18 @@ public class ProviderMap extends FragmentActivity implements OnMapReadyCallback,
                 Log.e(TAG, "onCancelled: ERROR: " + databaseError.getMessage());
             }
         });
+    }
+
+    private void removeRSRef(int roadSupportIndex) {
+        asistenciaVialRef.remove(roadSupportIndex);
+        int i = 0;
+        for (ActiveService elemento : serviciosActivos){
+            if (elemento.getRoadSupportIndex() > roadSupportIndex){
+                elemento.setRoadSupportIndex(elemento.getRoadSupportIndex() - 1);
+                serviciosActivos.set(i, elemento);
+            }
+            i++;
+        }
     }
 
     private ActiveService gettingDistance(ActiveService servicio) {
@@ -392,7 +404,26 @@ public class ProviderMap extends FragmentActivity implements OnMapReadyCallback,
                 aDistance = aDistance/1000;
                 aUnit = " km.";
             }
-            adaptador.add(label[elemento.getService()] + "\n" + servicesKeys.get(i) + "\n" + getString(R.string.aDistance) + aDistance + aUnit);
+            String supportLabel = "";
+            if (elemento.getService() == 3){
+                RoadSupport support = asistenciaVialRef.get(elemento.getRoadSupportIndex());
+                if (support.getBattery()){
+                    supportLabel = supportLabel + "\nBattery";
+                }
+                if (support.getBrakeFail()){
+                    supportLabel = supportLabel + "\nBrake Fail";
+                }
+                if (support.getDeflatedTire()){
+                    supportLabel = supportLabel + "\nDeflated tire";
+                }
+                if (support.getLeak()){
+                    supportLabel = supportLabel + "\nLeak";
+                }
+                if (support.getNoGas()){
+                    supportLabel = supportLabel + "\nNo gas";
+                }
+            }
+            adaptador.add(label[elemento.getService()] + supportLabel + "\n" + getString(R.string.aDistance) + aDistance + aUnit);
             Log.d(TAG, "updateAdapter: " + label[elemento.getService()]);
             i++;
         }
