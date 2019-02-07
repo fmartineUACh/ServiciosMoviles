@@ -7,4 +7,5 @@ package mx.uach.newcompass3.Objects;
 public class FirebaseReferences {
     final public static String ACTIVESERVICES_REFERENCE = "ActiveServices";
     final public static String RELEASEDSERVICES_REFERENCE = "ReleasedServices";
+    final public static String LOCATIONUPDATE_REFERENCE = "Locations";
 }

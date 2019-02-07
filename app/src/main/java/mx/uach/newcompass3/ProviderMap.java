@@ -23,6 +23,7 @@ import android.widget.ArrayAdapter;
 import android.widget.Button;
 import android.widget.ImageView;
 import android.widget.ListView;
+import android.widget.TextView;
 import android.widget.Toast;
 
 import com.google.android.gms.common.ConnectionResult;
@@ -67,9 +68,11 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.concurrent.ExecutionException;
+import java.util.concurrent.TimeUnit;
 
 import mx.uach.newcompass3.Objects.ActiveService;
 import mx.uach.newcompass3.Objects.FirebaseReferences;
+import mx.uach.newcompass3.Objects.LocationTracking;
 import mx.uach.newcompass3.Objects.ReleasedService;
 import mx.uach.newcompass3.Objects.RequestingService;
 import mx.uach.newcompass3.Objects.RoadSupport;
@@ -102,9 +105,11 @@ public class ProviderMap extends FragmentActivity implements OnMapReadyCallback,
     private String rDistUnit;
     private String sDistance = "";
     private String sDuration = "";
-    private int children = 0, working = 0;
+    private int children = 0, working = 0, lCount = 0;
+    private Date lastTime;
     //Widgets
     private ImageView mGps;
+    private TextView txtDetails;
     private Button btnAccept, btnCancel, btnRelease;
     private ArrayList markerPoints = new ArrayList();
     private ListView listView;
@@ -122,6 +127,7 @@ public class ProviderMap extends FragmentActivity implements OnMapReadyCallback,
         mGps = findViewById(R.id.ic_gps);
         btnAccept = findViewById(R.id.btn_accept);
         btnCancel = findViewById(R.id.btn_cancel);
+        txtDetails = findViewById(R.id.txt_details);
         /**Botón con fines de prueba. Eliminar en versión final.*/
         btnRelease = findViewById(R.id.btn_release);
         getLocationPermission();
@@ -131,7 +137,7 @@ public class ProviderMap extends FragmentActivity implements OnMapReadyCallback,
             Log.e(TAG, "onCreate: Permisos de ubicación denegados.");
         }else {
             LocationManager mLocationManager = (LocationManager) getSystemService(LOCATION_SERVICE);
-            mLocationManager.requestLocationUpdates(LocationManager.GPS_PROVIDER, 0, 2, mLocationListener);
+            mLocationManager.requestLocationUpdates(LocationManager.GPS_PROVIDER, 0, 15, mLocationListener);
         }
         adaptador = new ArrayAdapter<>(this, android.R.layout.simple_list_item_1, android.R.id.text1);
         listView = findViewById(R.id.list_view);
@@ -147,6 +153,7 @@ public class ProviderMap extends FragmentActivity implements OnMapReadyCallback,
                 Toast.makeText(ProviderMap.this, "Item: " + label[activo.getService()], Toast.LENGTH_SHORT).show();
                 LatLng origin;
                 origin = new LatLng(activo.getOriginlat(), activo.getOriginlon());
+                txtDetails.setText(adaptador.getItem(arg2));
                 drawing = true;
                 if (activo.getService() != 3) {
                     LatLng destination = new LatLng(activo.getDestinationlat(), activo.getDestinationlon());
@@ -167,6 +174,7 @@ public class ProviderMap extends FragmentActivity implements OnMapReadyCallback,
             @Override
             public void onClick(View v) {
                 working = 1;
+                txtDetails.setVisibility(View.VISIBLE);
                 activeRef.child(activo.getKey()).child("attending").setValue(true);
                 listView.setVisibility(View.INVISIBLE);
                 btnAccept.setVisibility(View.INVISIBLE);
@@ -176,12 +184,13 @@ public class ProviderMap extends FragmentActivity implements OnMapReadyCallback,
                 originLatLng = new LatLng(activo.getOriginlat(), activo.getOriginlon());
                 destinationLatLng = new LatLng(activo.getDestinationlat(), activo.getDestinationlon());
                 routing(currentLatLng, originLatLng);
+                locationUpdate();
             }
         });
         btnCancel.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View v) {
-                working = 0;
+                endWork();
                 mMap.clear();
                 activeRef.child(activo.getKey()).child("attending").setValue(false);
                 listView.setVisibility(View.VISIBLE);
@@ -316,6 +325,21 @@ public class ProviderMap extends FragmentActivity implements OnMapReadyCallback,
         });
     }
 
+    private void locationUpdate() {
+        DatabaseReference locationReference = database.getReference(FirebaseReferences.ACTIVESERVICES_REFERENCE).child(activo.getKey()).child(FirebaseReferences.LOCATIONUPDATE_REFERENCE);
+        Date cDate = Calendar.getInstance().getTime();
+        SimpleDateFormat tf = new SimpleDateFormat("kk:mm:ss");
+        LocationTracking lt = new LocationTracking(tf.format(cDate), currentLatLng.latitude, currentLatLng.longitude);
+        if (lCount > 0){
+            long diffInMs = cDate.getTime() - lastTime.getTime();
+            double tDif = TimeUnit.MILLISECONDS.toSeconds(diffInMs);
+            lt.setSpeed(15/tDif);
+        }
+        lastTime = cDate;
+        locationReference.child("l" + lCount).setValue(lt);
+        lCount++;
+    }
+
     private void removeRSRef(int roadSupportIndex) {
         asistenciaVialRef.remove(roadSupportIndex);
         int i = 0;
@@ -353,15 +377,17 @@ public class ProviderMap extends FragmentActivity implements OnMapReadyCallback,
             //Toast.makeText(MapActivity.this, "currentLatLng: " + currentLatLng, Toast.LENGTH_SHORT).show();
             Location location1 = new Location(LocationManager.GPS_PROVIDER), location2 = new Location(LocationManager.GPS_PROVIDER);
             if(working == 1){
+                locationUpdate();
                 location1.setLatitude(currentLatLng.latitude);
                 location1.setLongitude(currentLatLng.longitude);
                 location2.setLatitude(originLatLng.latitude);
                 location2.setLatitude(originLatLng.longitude);
-                if(location1.distanceTo(location2) < 10){
+                if(location1.distanceTo(location2) < 20){
                     routing(currentLatLng, destinationLatLng);
                     working = 2;
                 }
             }else if (working == 2){
+                locationUpdate();
                 location1.setLatitude(currentLatLng.latitude);
                 location1.setLatitude(currentLatLng.longitude);
                 location2.setLatitude(destinationLatLng.latitude);
@@ -369,7 +395,7 @@ public class ProviderMap extends FragmentActivity implements OnMapReadyCallback,
                 if (activo.getService() == 3){
                     btnRelease.setVisibility(View.VISIBLE);
                 }
-                if(location1.distanceTo(location2) < 10 && activo.getService() != 3){
+                if(location1.distanceTo(location2) < 20 && activo.getService() != 3){
                     releaseService();
                 }
             }
@@ -422,6 +448,8 @@ public class ProviderMap extends FragmentActivity implements OnMapReadyCallback,
                 if (support.getNoGas()){
                     supportLabel = supportLabel + "\nNo gas";
                 }
+            }else if (elemento.getService() == 4){
+                supportLabel = supportLabel + "\n" + elemento.getfOrder();
             }
             adaptador.add(label[elemento.getService()] + supportLabel + "\n" + getString(R.string.aDistance) + aDistance + aUnit);
             Log.d(TAG, "updateAdapter: " + label[elemento.getService()]);
@@ -452,7 +480,7 @@ public class ProviderMap extends FragmentActivity implements OnMapReadyCallback,
         btnRelease.setVisibility(View.INVISIBLE);
         moveCamera(currentLatLng, DEFAUL_ZOOM, getString(R.string.myLocation));
         listView.setVisibility(View.VISIBLE);
-        working = 0;
+        endWork();
         if (rDistUnit.compareTo("km") == 0){
             rDistance = rDistance * 1000;
         }
@@ -472,6 +500,12 @@ public class ProviderMap extends FragmentActivity implements OnMapReadyCallback,
         }
         activeRef.child(activo.getKey()).removeValue();
         activo = null;
+    }
+
+    private void endWork() {
+        working = 0;
+        txtDetails.setVisibility(View.INVISIBLE);
+        lCount = 0;
     }
 
     /**Implementación de mapa*/
