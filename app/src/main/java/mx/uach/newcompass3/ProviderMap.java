@@ -467,6 +467,8 @@ public class ProviderMap extends FragmentActivity implements OnMapReadyCallback,
         if (activo.getService() == 3){
             nRel.child("roadSupport").setValue(rsActivo);
             rsActivo = null;
+        }else if(activo.getService() == 4){
+            nRel.child("fOrder").setValue(activo.getfOrder());
         }
         activeRef.child(activo.getKey()).removeValue();
         activo = null;

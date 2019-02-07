@@ -23,11 +23,11 @@ import com.google.firebase.auth.FirebaseAuth;
 import com.google.firebase.auth.FirebaseUser;
 
 public class MainActivity extends AppCompatActivity implements AdapterView.OnItemSelectedListener {
-    private Button btnseguir, btnProv;
+    private Button btnnext, btnProv;
     private TextView help;
     private int spOption, travelWay = 0;
     //Layouts
-    private ConstraintLayout clpaq, clapoyo, clfood;
+    private ConstraintLayout clpar, clsupp, clfood;
     private RadioButton fromCurrent, fromMarker;
     private CheckBox chFlatTire, chGas, chLeak, chBrake, chBatery;
     private EditText ofOrder;
@@ -44,15 +44,15 @@ public class MainActivity extends AppCompatActivity implements AdapterView.OnIte
         adapter.setDropDownViewResource(android.R.layout.simple_spinner_dropdown_item);
         // Apply the adapter to the spinner
         spservice.setAdapter(adapter);
-        btnseguir = findViewById(R.id.btnseguir);
+        btnnext = findViewById(R.id.btnseguir);
         btnProv = findViewById(R.id.btnprov);
-        btnseguir.setEnabled(false);
+        btnnext.setEnabled(false);
         help = findViewById(R.id.help);
         help.setEnabled(false);
         spservice.setOnItemSelectedListener(this);
         //Menús
-        clapoyo = findViewById(R.id.clapoyo);
-        clpaq = findViewById(R.id.clpaq);
+        clsupp = findViewById(R.id.clapoyo);
+        clpar = findViewById(R.id.clpaq);
         clfood = findViewById(R.id.clfood);
         fromCurrent = findViewById(R.id.fromCurrent);
         fromMarker = findViewById(R.id.fromMarker);
@@ -68,13 +68,13 @@ public class MainActivity extends AppCompatActivity implements AdapterView.OnIte
         Intent intent = new Intent(this, MapActivity.class);
         intent.putExtra("spOption", spOption);
         intent.putExtra("travelWay", travelWay);
-        //Servicios viales
+        /**Servicios viales*/
         intent.putExtra("rsBatery", chBatery.isChecked());
         intent.putExtra("rsBrake", chBrake.isChecked());
         intent.putExtra("rsLeak", chLeak.isChecked());
         intent.putExtra("rsGas", chGas.isChecked());
         intent.putExtra("rsFlatTire", chFlatTire.isChecked());
-        //Orden de comida
+        /**Orden de comida*/
         intent.putExtra("fOrder", ofOrder.getText());
         startActivity(intent);
     }
@@ -87,8 +87,8 @@ public class MainActivity extends AppCompatActivity implements AdapterView.OnIte
     public void onItemSelected(AdapterView<?> parent, View view, int position, long id) {
         String item = parent.getItemAtPosition(position).toString();
         spOption = position;
-        clpaq.setVisibility(View.GONE);
-        clapoyo.setVisibility(View.GONE);
+        clpar.setVisibility(View.GONE);
+        clsupp.setVisibility(View.GONE);
         clfood.setVisibility(View.GONE);
         help.setText(item);
         //clcuentas.setVisibility(View.GONE);
@@ -99,7 +99,7 @@ public class MainActivity extends AppCompatActivity implements AdapterView.OnIte
                 help.setText(R.string.ptHelp);
                 break;
             case 1:
-                clpaq.setVisibility(View.VISIBLE);
+                clpar.setVisibility(View.VISIBLE);
                 if(fromCurrent.isChecked()){
                     travelWay = 0;
                 }else if (fromMarker.isChecked()){
@@ -116,7 +116,7 @@ public class MainActivity extends AppCompatActivity implements AdapterView.OnIte
                 break;
             case 3:
                 travelWay = 0;
-                clapoyo.setVisibility(View.VISIBLE);
+                clsupp.setVisibility(View.VISIBLE);
                 help.setText(R.string.rsHelp);
                 break;
             case 4:
@@ -125,7 +125,7 @@ public class MainActivity extends AppCompatActivity implements AdapterView.OnIte
                 help.setText(R.string.ofHelp);
                 break;
         }
-        btnseguir.setEnabled(true);
+        btnnext.setEnabled(true);
     }
 
     @Override
