@@ -89,6 +89,7 @@ public class ProviderMap extends FragmentActivity implements OnMapReadyCallback,
     private static final LatLngBounds LAT_LNG_BOUNDS = new LatLngBounds(new LatLng(28.555541, -106.187639), new LatLng(28.798408, -105.888866));
     private static final String MY_API_KEY = BuildConfig.ApiKey;
     //Vars
+    private String driver = "Test driver";
     private Boolean mLocationPermissionGranted = false, drawing = true;
     private GoogleMap mMap;
     private PlaceAutocompleteAdapter mPlaceAutocompleteAdapter;
@@ -153,7 +154,10 @@ public class ProviderMap extends FragmentActivity implements OnMapReadyCallback,
                 Toast.makeText(ProviderMap.this, "Item: " + label[activo.getService()], Toast.LENGTH_SHORT).show();
                 LatLng origin;
                 origin = new LatLng(activo.getOriginlat(), activo.getOriginlon());
-                txtDetails.setText(adaptador.getItem(arg2));
+                String det = adaptador.getItem(arg2);
+                int ll = det.lastIndexOf("\n");
+                det = det.substring(0, ll);
+                txtDetails.setText(det);
                 drawing = true;
                 if (activo.getService() != 3) {
                     LatLng destination = new LatLng(activo.getDestinationlat(), activo.getDestinationlon());
@@ -176,6 +180,7 @@ public class ProviderMap extends FragmentActivity implements OnMapReadyCallback,
                 working = 1;
                 txtDetails.setVisibility(View.VISIBLE);
                 activeRef.child(activo.getKey()).child("attending").setValue(true);
+                activeRef.child(activo.getKey()).child("driver").setValue(driver);
                 listView.setVisibility(View.INVISIBLE);
                 btnAccept.setVisibility(View.INVISIBLE);
                 btnCancel.setVisibility(View.VISIBLE);
@@ -193,6 +198,8 @@ public class ProviderMap extends FragmentActivity implements OnMapReadyCallback,
                 endWork();
                 mMap.clear();
                 activeRef.child(activo.getKey()).child("attending").setValue(false);
+                activeRef.child(activo.getKey()).child("driver").removeValue();
+                activeRef.child(activo.getKey()).child("Locations").removeValue();
                 listView.setVisibility(View.VISIBLE);
                 btnCancel.setVisibility(View.INVISIBLE);
                 btnRelease.setVisibility(View.INVISIBLE);
@@ -212,6 +219,7 @@ public class ProviderMap extends FragmentActivity implements OnMapReadyCallback,
                 Log.d(TAG, "onChildAdded: Inserción " + children);
                 Log.d(TAG, "onChildAdded: Hijo a crear: " + dataSnapshot);
                 ActiveService servicio = dataSnapshot.getValue(ActiveService.class);
+                assert servicio != null;
                 if (servicio.getService() == 3){
                     RoadSupport apoyoVial = dataSnapshot.child("roadSupport").getValue(RoadSupport.class);
                     asistenciaVialRef.add(apoyoVial);
@@ -226,7 +234,6 @@ public class ProviderMap extends FragmentActivity implements OnMapReadyCallback,
                     servicio = gettingDistance(servicio);
                 }
                 servicio.setKey(dataSnapshot.getKey());
-                assert servicio != null;
                 Log.d(TAG, "onChildAdded:\nServicio: " + servicio.getService() + "\n¿Atendiendo? " + servicio.getAttending()
                         + "\nOrigen: " + servicio.getOriginlat() + ", " + servicio.getOriginlon()
                         + "\nDestino: " + servicio.getDestinationlat() + ", " + servicio.getDestinationlon()
@@ -258,7 +265,7 @@ public class ProviderMap extends FragmentActivity implements OnMapReadyCallback,
                     if (index == -1) {
                         Log.d(TAG, "onChildChanged: Elemento que vuelve a ser activo. Trasladando a onChildAdded");
                         onChildAdded(dataSnapshot, s);
-                    } else if (index >= 0) {
+                    } else {
                         if (!servicio.getAttending()) {
                             if (servicio.getService() == 3) {
                                 RoadSupport apoyoVial = dataSnapshot.child("roadSupport").getValue(RoadSupport.class);
@@ -280,8 +287,6 @@ public class ProviderMap extends FragmentActivity implements OnMapReadyCallback,
                             Log.d(TAG, "onChildChanged: El objeto tiene la propiedad Attending como verdadera y ha sido retirado de la lista.");
                         }
                         updateAdapter();
-                    } else {
-                        Log.e(TAG, "onChildChanged: Error, número de lista incorrecto.");
                     }
                 }catch (Exception e){
                     Log.e(TAG, "onChildChanged: Error: " + e.getMessage());
@@ -486,7 +491,6 @@ public class ProviderMap extends FragmentActivity implements OnMapReadyCallback,
         }
         Date cDate = Calendar.getInstance().getTime();
         SimpleDateFormat tf = new SimpleDateFormat("kk:mm:ss");
-        String driver = "Test driver";
         String cClient = "Test client";
         DatabaseReference nRel = releasedRef.push();
         nRel.setValue(new ReleasedService(activo.getService(),

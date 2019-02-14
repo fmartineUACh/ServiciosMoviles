@@ -3,16 +3,16 @@ package mx.uach.newcompass3.Objects;
 public class LocationTracking {
     private String time;
     private double lat;
-    private double lon;
+    private double lng;
     private double speed;
 
     public LocationTracking() {
     }
 
-    public LocationTracking(String time, double lat, double lon) {
+    public LocationTracking(String time, double lat, double lng) {
         this.time = time;
         this.lat = lat;
-        this.lon = lon;
+        this.lng = lng;
     }
 
     public String getTime() {
@@ -31,12 +31,12 @@ public class LocationTracking {
         this.lat = lat;
     }
 
-    public double getLon() {
-        return lon;
+    public double getlng() {
+        return lng;
     }
 
-    public void setLon(double lon) {
-        this.lon = lon;
+    public void setlng(double lng) {
+        this.lng = lng;
     }
 
     public double getSpeed() {
