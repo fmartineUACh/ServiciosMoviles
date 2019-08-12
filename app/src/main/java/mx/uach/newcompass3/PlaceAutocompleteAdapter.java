@@ -21,10 +21,10 @@ import com.google.android.gms.common.api.GoogleApiClient;
 import com.google.android.gms.common.api.PendingResult;
 import com.google.android.gms.common.api.Status;
 import com.google.android.gms.common.data.DataBufferUtils;
-import com.google.android.gms.location.places.AutocompleteFilter;
-import com.google.android.gms.location.places.AutocompletePrediction;
-import com.google.android.gms.location.places.AutocompletePredictionBuffer;
-import com.google.android.gms.location.places.Places;
+import com.google.android.libraries.places.compat.AutocompleteFilter;
+import com.google.android.libraries.places.compat.AutocompletePrediction;
+import com.google.android.libraries.places.compat.AutocompletePredictionBuffer;
+import com.google.android.libraries.places.compat.Places;
 import com.google.android.gms.maps.model.LatLngBounds;
 
 
@@ -52,7 +52,7 @@ import java.util.concurrent.TimeUnit;
  * <p>
  * Note that this adapter requires a valid {@link com.google.android.gms.common.api.GoogleApiClient}.
  * The API client must be maintained in the encapsulating Activity, including all lifecycle and
- * connection states. The API client must be connected with the {@link Places#GEO_DATA_API} API.
+ * connection states. The API client must be connected with the API.
  */
 public class PlaceAutocompleteAdapter
         extends ArrayAdapter<AutocompletePrediction> implements Filterable {
@@ -201,7 +201,6 @@ public class PlaceAutocompleteAdapter
      *
      * @param constraint Autocomplete query string
      * @return Results from the autocomplete API or null if the query was not successful.
-     * @see Places#GEO_DATA_API#getAutocomplete(CharSequence)
      * @see AutocompletePrediction#freeze()
      */
     private ArrayList<AutocompletePrediction> getAutocomplete(CharSequence constraint) {

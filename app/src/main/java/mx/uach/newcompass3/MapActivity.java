@@ -13,20 +13,16 @@ import android.os.AsyncTask;
 import android.os.Bundle;
 import android.support.annotation.NonNull;
 import android.support.v4.app.ActivityCompat;
-import android.support.v4.app.Fragment;
 import android.support.v4.app.FragmentActivity;
 import android.support.v4.content.ContextCompat;
 import android.util.Log;
-import android.support.annotation.Nullable;
 import android.view.KeyEvent;
 import android.view.View;
-import android.view.Window;
 import android.view.WindowManager;
 import android.view.inputmethod.EditorInfo;
 import android.widget.AdapterView;
 import android.widget.AutoCompleteTextView;
 import android.widget.Button;
-import android.widget.EditText;
 import android.widget.ImageView;
 import android.widget.TextView;
 import android.widget.Toast;
@@ -38,21 +34,12 @@ import com.google.android.gms.common.api.GoogleApiClient;
 import com.google.android.gms.common.api.PendingResult;
 import com.google.android.gms.common.api.ResultCallback;
 import com.google.android.gms.location.FusedLocationProviderClient;
-import com.google.android.gms.location.LocationCallback;
-import com.google.android.gms.location.LocationRequest;
-import com.google.android.gms.location.LocationResult;
 import com.google.android.gms.location.LocationServices;
-import com.google.android.gms.location.places.AutocompletePrediction;
-import com.google.android.gms.location.places.Place;
-import com.google.android.gms.location.places.PlaceBuffer;
-import com.google.android.gms.location.places.Places;
-import com.google.android.gms.location.places.ui.PlacePicker;
 import com.google.android.gms.maps.CameraUpdate;
 import com.google.android.gms.maps.CameraUpdateFactory;
 import com.google.android.gms.maps.GoogleMap;
 import com.google.android.gms.maps.OnMapReadyCallback;
 import com.google.android.gms.maps.SupportMapFragment;
-import com.google.android.gms.maps.model.BitmapDescriptor;
 import com.google.android.gms.maps.model.BitmapDescriptorFactory;
 import com.google.android.gms.maps.model.LatLng;
 import com.google.android.gms.maps.model.LatLngBounds;
@@ -61,39 +48,37 @@ import com.google.android.gms.maps.model.MarkerOptions;
 import com.google.android.gms.maps.model.PolylineOptions;
 import com.google.android.gms.tasks.OnCompleteListener;
 import com.google.android.gms.tasks.Task;
+import com.google.android.libraries.places.api.Places;
+import com.google.android.libraries.places.api.net.PlacesClient;
+import com.google.android.libraries.places.compat.AutocompletePrediction;
+import com.google.android.libraries.places.compat.Place;
+import com.google.android.libraries.places.compat.PlaceBuffer;
+import com.google.android.libraries.places.compat.ui.PlacePicker;
 import com.google.firebase.database.DatabaseReference;
 import com.google.firebase.database.FirebaseDatabase;
-import com.google.maps.DirectionsApiRequest;
 import com.google.maps.GeoApiContext;
-import com.google.maps.model.DirectionsResult;
 
 import org.json.JSONObject;
 
 import java.io.BufferedReader;
-import java.io.IOError;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.InputStreamReader;
 import java.net.HttpURLConnection;
 import java.net.URL;
-import java.sql.Time;
 import java.text.SimpleDateFormat;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.Calendar;
 import java.util.Date;
 import java.util.HashMap;
 import java.util.List;
-import java.util.Map;
 import java.util.concurrent.ExecutionException;
 
-import mx.uach.newcompass3.Objects.ActiveService;
 import mx.uach.newcompass3.Objects.FirebaseReferences;
-import mx.uach.newcompass3.Objects.ReleasedService;
 import mx.uach.newcompass3.Objects.RequestingService;
 import mx.uach.newcompass3.Objects.RoadSupport;
 import mx.uach.newcompass3.models.PlaceInfo;
-
-import static java.lang.StrictMath.abs;
 
 /**
  * Created by Alt on 23/08/2018.
@@ -118,6 +103,7 @@ public class MapActivity extends FragmentActivity implements OnMapReadyCallback,
     private Marker mMarker;
     private LatLng currentLatLng, originLatLng, destinationLatLng;
     private GeoApiContext mGeoApiContext = null;
+    private PlacesClient placesClient;
     private int spOption, travelWay;
     private static String driver = "Test driver";
     private String cClient = "Test client";
@@ -148,6 +134,13 @@ public class MapActivity extends FragmentActivity implements OnMapReadyCallback,
         mRouting = findViewById(R.id.ic_direction);
         btnRequest = findViewById(R.id.btnRequest);
         Log.d(TAG, "onCreate: Botones definidos");
+
+        // Initialize Places.
+        Places.initialize(getApplicationContext(), MY_API_KEY);
+
+        // Create a new Places client instance.
+        placesClient = Places.createClient(this);
+
         if (btnRequest == null) {
             Log.d(TAG, "onCreate: Referencia a btnRequest nula");
             if (findViewById(R.id.btnRequest) == null) {
@@ -206,7 +199,7 @@ public class MapActivity extends FragmentActivity implements OnMapReadyCallback,
     private void init(){
         Log.d(TAG, "init: Iniciando");
 
-        mGoogleApiClient = new GoogleApiClient.Builder(this).addApi(Places.GEO_DATA_API).addApi(Places.PLACE_DETECTION_API).enableAutoManage(this, this).build();
+        mGoogleApiClient = new GoogleApiClient.Builder(this).enableAutoManage(this, this).build();
         mSearchText.setOnItemClickListener(mAutoCompleteClickListener);
 
         mPlaceAutocompleteAdapter = new PlaceAutocompleteAdapter(this, mGoogleApiClient, LAT_LNG_BOUNDS, null);
@@ -626,7 +619,7 @@ public class MapActivity extends FragmentActivity implements OnMapReadyCallback,
     }
 
     private List<List<HashMap<String, String>>> parsing(String... jsonData) {
-        Log.d(TAG, "parsing: Recibiendo: " + jsonData);
+        Log.d(TAG, "parsing: Recibiendo: " + Arrays.toString(jsonData));
         JSONObject jObject;
         List<List<HashMap<String, String>>> routes = null;
         try {
@@ -744,8 +737,8 @@ public class MapActivity extends FragmentActivity implements OnMapReadyCallback,
         String output = "json";
 
         // Building the url to the web service
-        String url = "https://maps.googleapis.com/maps/api/directions/" + output + "?" + parameters + "&key=" + MY_API_KEY;
-
+        String url = "https://maps.googleapis.com/maps/api/directions/"
+                + output + "?" + parameters + "&key=" + MY_API_KEY;
 
         return url;
     }
@@ -766,7 +759,7 @@ public class MapActivity extends FragmentActivity implements OnMapReadyCallback,
 
             StringBuffer sb = new StringBuffer();
 
-            String line = "";
+            String line;
             while ((line = br.readLine()) != null) {
                 sb.append(line);
             }

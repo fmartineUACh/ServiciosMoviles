@@ -1,18 +1,16 @@
 package mx.uach.newcompass3;
 
 import android.Manifest;
-import android.content.Context;
-import android.content.SharedPreferences;
 import android.content.pm.PackageManager;
 import android.graphics.Color;
 import android.location.Location;
 import android.location.LocationListener;
 import android.location.LocationManager;
 import android.os.AsyncTask;
+import android.os.Bundle;
 import android.support.annotation.NonNull;
 import android.support.v4.app.ActivityCompat;
 import android.support.v4.app.FragmentActivity;
-import android.os.Bundle;
 import android.support.v4.content.ContextCompat;
 import android.support.v4.widget.DrawerLayout;
 import android.util.Log;
@@ -28,10 +26,8 @@ import android.widget.Toast;
 
 import com.google.android.gms.common.ConnectionResult;
 import com.google.android.gms.common.api.GoogleApiClient;
-import com.google.android.gms.common.api.Releasable;
 import com.google.android.gms.location.FusedLocationProviderClient;
 import com.google.android.gms.location.LocationServices;
-import com.google.android.gms.location.places.Places;
 import com.google.android.gms.maps.CameraUpdate;
 import com.google.android.gms.maps.CameraUpdateFactory;
 import com.google.android.gms.maps.GoogleMap;
@@ -50,7 +46,6 @@ import com.google.firebase.database.DataSnapshot;
 import com.google.firebase.database.DatabaseError;
 import com.google.firebase.database.DatabaseReference;
 import com.google.firebase.database.FirebaseDatabase;
-import com.google.maps.GeoApiContext;
 
 import org.json.JSONObject;
 
@@ -62,11 +57,12 @@ import java.net.HttpURLConnection;
 import java.net.URL;
 import java.text.SimpleDateFormat;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.Calendar;
 import java.util.Date;
 import java.util.HashMap;
 import java.util.List;
-import java.util.Map;
+import java.util.Objects;
 import java.util.concurrent.ExecutionException;
 import java.util.concurrent.TimeUnit;
 
@@ -74,9 +70,7 @@ import mx.uach.newcompass3.Objects.ActiveService;
 import mx.uach.newcompass3.Objects.FirebaseReferences;
 import mx.uach.newcompass3.Objects.LocationTracking;
 import mx.uach.newcompass3.Objects.ReleasedService;
-import mx.uach.newcompass3.Objects.RequestingService;
 import mx.uach.newcompass3.Objects.RoadSupport;
-import mx.uach.newcompass3.models.PlaceInfo;
 
 public class ProviderMap extends FragmentActivity implements OnMapReadyCallback, GoogleApiClient.OnConnectionFailedListener {
 
@@ -84,25 +78,19 @@ public class ProviderMap extends FragmentActivity implements OnMapReadyCallback,
     private static final String FINE_LOCATION = android.Manifest.permission.ACCESS_FINE_LOCATION;
     private static final String COARSE_LOCATION = android.Manifest.permission.ACCESS_COARSE_LOCATION;
     private static final int LOCATION_PERMISSION_REQUEST_CODE = 1234;
-    private static final float DEFAUL_ZOOM = 15f;
-    private static final int PLACE_PICCKER_REQUEST = 1;
-    private static final LatLngBounds LAT_LNG_BOUNDS = new LatLngBounds(new LatLng(28.555541, -106.187639), new LatLng(28.798408, -105.888866));
+    private static final float DEFAULT_ZOOM = 15f;
     private static final String MY_API_KEY = BuildConfig.ApiKey;
     //Vars
     private String driver = "Test driver";
     private Boolean mLocationPermissionGranted = false, drawing = true;
     private GoogleMap mMap;
-    private PlaceAutocompleteAdapter mPlaceAutocompleteAdapter;
-    private PlaceInfo mPlace;
-    private Marker mMarker;
     private LatLng currentLatLng, originLatLng, destinationLatLng;
-    private GeoApiContext mGeoApiContext;
     private List<ActiveService> serviciosActivos = new ArrayList<ActiveService>();
     private List<RoadSupport> asistenciaVialRef = new ArrayList<>();
     private ActiveService activo;
     private RoadSupport rsActivo;
     //private LocationListener mLocationListener;
-    private float rDistance = 0, mDistance = 0;
+    private float rDistance = 0;
     private String rDistUnit;
     private String sDistance = "";
     private String sDuration = "";
@@ -119,7 +107,7 @@ public class ProviderMap extends FragmentActivity implements OnMapReadyCallback,
     private DatabaseReference activeRef = database.getReference(FirebaseReferences.ACTIVESERVICES_REFERENCE);
     private DatabaseReference releasedRef = database.getReference(FirebaseReferences.RELEASEDSERVICES_REFERENCE);
     private ArrayAdapter<String> adaptador = null;
-    private ArrayList servicesKeys = new ArrayList();
+    private ArrayList<String> servicesKeys = new ArrayList<>();
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -129,7 +117,7 @@ public class ProviderMap extends FragmentActivity implements OnMapReadyCallback,
         btnAccept = findViewById(R.id.btn_accept);
         btnCancel = findViewById(R.id.btn_cancel);
         txtDetails = findViewById(R.id.txt_details);
-        /**Botón con fines de prueba. Eliminar en versión final.*/
+        /*Botón con fines de prueba. Eliminar en versión final.*/
         btnRelease = findViewById(R.id.btn_release);
         getLocationPermission();
         if (ActivityCompat.checkSelfPermission(this, Manifest.permission.ACCESS_FINE_LOCATION)
@@ -168,7 +156,7 @@ public class ProviderMap extends FragmentActivity implements OnMapReadyCallback,
                     MarkerOptions options = new MarkerOptions().position(origin).title(label[3]);
                     mMap.clear();
                     mMap.addMarker(options);
-                    moveCamera(origin, DEFAUL_ZOOM, label[3]);
+                    moveCamera(origin, label[3]);
                 }
                 drawerLayout.closeDrawers();
                 btnAccept.setVisibility(View.VISIBLE);
@@ -203,7 +191,7 @@ public class ProviderMap extends FragmentActivity implements OnMapReadyCallback,
                 listView.setVisibility(View.VISIBLE);
                 btnCancel.setVisibility(View.INVISIBLE);
                 btnRelease.setVisibility(View.INVISIBLE);
-                moveCamera(currentLatLng, DEFAUL_ZOOM, getString(R.string.myLocation));
+                moveCamera(currentLatLng, getString(R.string.myLocation));
             }
         });
         btnRelease.setOnClickListener(new View.OnClickListener() {
@@ -426,7 +414,6 @@ public class ProviderMap extends FragmentActivity implements OnMapReadyCallback,
         String[] label = getResources().getStringArray(R.array.slabels);
         adaptador.clear();
         Log.d(TAG, "updateAdapter: Actualizando adaptador.");
-        int i = 0;
         float aDistance;
         for(ActiveService elemento : serviciosActivos){
             aDistance = elemento.getDistance();
@@ -458,7 +445,6 @@ public class ProviderMap extends FragmentActivity implements OnMapReadyCallback,
             }
             adaptador.add(label[elemento.getService()] + supportLabel + "\n" + getString(R.string.aDistance) + aDistance + aUnit);
             Log.d(TAG, "updateAdapter: " + label[elemento.getService()]);
-            i++;
         }
     }
 
@@ -483,7 +469,7 @@ public class ProviderMap extends FragmentActivity implements OnMapReadyCallback,
         mMap.clear();
         btnCancel.setVisibility(View.INVISIBLE);
         btnRelease.setVisibility(View.INVISIBLE);
-        moveCamera(currentLatLng, DEFAUL_ZOOM, getString(R.string.myLocation));
+        moveCamera(currentLatLng, getString(R.string.myLocation));
         listView.setVisibility(View.VISIBLE);
         endWork();
         if (rDistUnit.compareTo("km") == 0){
@@ -566,8 +552,8 @@ public class ProviderMap extends FragmentActivity implements OnMapReadyCallback,
                         if(task.isSuccessful()){
                             Log.d(TAG, "onComplete: ¡Ubicación encontrada!");
                             Location currentLocation = (Location) task.getResult();
-                            currentLatLng = new LatLng(currentLocation.getLatitude(), currentLocation.getLongitude());
-                            moveCamera(currentLatLng, DEFAUL_ZOOM, getString(R.string.myLocation));
+                            currentLatLng = new LatLng(Objects.requireNonNull(currentLocation).getLatitude(), currentLocation.getLongitude());
+                            moveCamera(currentLatLng, getString(R.string.myLocation));
                             updateDistance();
                         }else{
                             Log.d(TAG, "onComplete: La ubicación actual es nula");
@@ -583,20 +569,19 @@ public class ProviderMap extends FragmentActivity implements OnMapReadyCallback,
 
     private void init(){
         Log.d(TAG, "init: Iniciando");
-        GoogleApiClient mGoogleApiClient = new GoogleApiClient.Builder(this).addApi(Places.GEO_DATA_API).addApi(Places.PLACE_DETECTION_API).enableAutoManage(this, this).build();
         //Centrar cámara en ubicación actual y asignarla como origen
         mGps.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View v) {
                 Log.d(TAG, "onClick: Clic en ícono de GPS");
-                moveCamera(currentLatLng, DEFAUL_ZOOM, getString(R.string.myLocation));
+                moveCamera(currentLatLng, getString(R.string.myLocation));
             }
         });
     }
 
-    private void moveCamera(LatLng latLng, float zoom, String title){
+    private void moveCamera(LatLng latLng, String title){
         Log.d(TAG, "moveCamera: Moviendo la cámara a:\nLat: " + latLng.latitude + "\nLng: " + latLng.longitude);
-        mMap.animateCamera(CameraUpdateFactory.newLatLngZoom(latLng, zoom));
+        mMap.animateCamera(CameraUpdateFactory.newLatLngZoom(latLng, ProviderMap.DEFAULT_ZOOM));
 
         if(!title.equals(getString(R.string.myLocation))) {
             MarkerOptions options = new MarkerOptions().position(latLng).title(title);
@@ -657,7 +642,7 @@ public class ProviderMap extends FragmentActivity implements OnMapReadyCallback,
         return super.onOptionsItemSelected(item);
     }
 
-    /**Métodos de enrutamiento*/
+    /*-------------------------------------- Métodos de enrutamiento --------------------------------------------*/
     //Ejecutando enrutamiento
     public void routing(LatLng origin, LatLng destination){
         //Este código debe ir encerrado dentro de condiciones pues debe comportarse distinto según la opción elegida por el usuario en la pantalla anterior
@@ -691,9 +676,7 @@ public class ProviderMap extends FragmentActivity implements OnMapReadyCallback,
                 } catch (NullPointerException e) {
                     Toast.makeText(getApplicationContext(), getString(R.string.routeError), Toast.LENGTH_LONG).show();
                     Log.e(TAG, "routing: Error de enrutamiento: " + e.getMessage(), e);
-                } catch (InterruptedException e) {
-                    e.printStackTrace();
-                } catch (ExecutionException e) {
+                } catch (InterruptedException | ExecutionException e) {
                     e.printStackTrace();
                 }
             }else{
@@ -722,29 +705,21 @@ public class ProviderMap extends FragmentActivity implements OnMapReadyCallback,
         String output = "json";
 
         // Building the url to the web service
-        String url = "https://maps.googleapis.com/maps/api/directions/" + output + "?" + parameters + "&key=" + MY_API_KEY;
-
-
-        return url;
+        return "https://maps.googleapis.com/maps/api/directions/" + output + "?" + parameters + "&key=" + MY_API_KEY;
     }
     private String downloadUrl(String strUrl) throws IOException {
         String data = "";
-        InputStream iStream = null;
-        HttpURLConnection urlConnection = null;
-        try {
-            URL url = new URL(strUrl);
-
-            urlConnection = (HttpURLConnection) url.openConnection();
-
-            urlConnection.connect();
-
-            iStream = urlConnection.getInputStream();
+        HttpURLConnection urlConnection;
+        URL url = new URL(strUrl);
+        urlConnection = (HttpURLConnection) url.openConnection();
+        urlConnection.connect();
+        try (InputStream iStream = urlConnection.getInputStream()) {
 
             BufferedReader br = new BufferedReader(new InputStreamReader(iStream));
 
-            StringBuffer sb = new StringBuffer();
+            StringBuilder sb = new StringBuilder();
 
-            String line = "";
+            String line;
             while ((line = br.readLine()) != null) {
                 sb.append(line);
             }
@@ -756,7 +731,6 @@ public class ProviderMap extends FragmentActivity implements OnMapReadyCallback,
         } catch (Exception e) {
             Log.d("downloadUrl: Exception", e.toString());
         } finally {
-            iStream.close();
             urlConnection.disconnect();
         }
         return data;
@@ -789,7 +763,7 @@ public class ProviderMap extends FragmentActivity implements OnMapReadyCallback,
     }
     /**Métodos para convertir la información*/
     private List<List<HashMap<String, String>>> parsing(String... jsonData) {
-        Log.d(TAG, "parsing: Recibiendo: " + jsonData);
+        Log.d(TAG, "parsing: Recibiendo: " + Arrays.toString(jsonData));
         JSONObject jObject;
         List<List<HashMap<String, String>>> routes = null;
         try {
@@ -808,29 +782,28 @@ public class ProviderMap extends FragmentActivity implements OnMapReadyCallback,
         PolylineOptions lineOptions = new PolylineOptions();
         lineOptions.width(2);
         lineOptions.color(Color.BLUE);
-        MarkerOptions markerOptions = new MarkerOptions();
         try {
             int cfor;
-            if(result.size()==0){
+            if (result.size() == 0) {
                 Log.w(TAG, "mapping: result.size no tiene valor. Se asignará un valor de 1 para el ciclo.");
                 cfor = 1;
-            }else{
+            } else {
                 Log.d(TAG, "mapping: result.size: " + result.size());
                 cfor = result.size();
             }
             Log.d(TAG, "mapping: Entrando a ciclo For con cfor = " + cfor);
             for (int i = 0; i < cfor; i++) {
-                points = new ArrayList();
+                points = new ArrayList<>();
 
                 List<HashMap<String, String>> path = result.get(i);
                 Log.d(TAG, "mapping: Entrando a ciclo For con path.size = " + path.size());
                 for (int j = 0; j < path.size(); j++) {
                     HashMap<String, String> point = path.get(j);
 
-                    if(j==0){    // Get distance from the list
+                    if (j == 0) {    // Get distance from the list
                         sDistance = point.get("distance");
                         continue;
-                    }else if(j==1){ // Get duration from the list
+                    } else if (j == 1) { // Get duration from the list
                         sDuration = point.get("duration");
                         continue;
                     }
@@ -849,97 +822,14 @@ public class ProviderMap extends FragmentActivity implements OnMapReadyCallback,
                 lineOptions.geodesic(true);
 
             }
-            Log.d(TAG, "mapping: Almacenando Distancia: "+sDistance + ", Duración: "+sDuration);
-            if(drawing) {
+            Log.d(TAG, "mapping: Almacenando Distancia: " + sDistance + ", Duración: " + sDuration);
+            if (drawing) {
                 // Drawing polyline in the Google Map for the i-th route
                 mMap.addPolyline(lineOptions);
             }
         } catch (Exception e) {
-            Toast.makeText(getApplicationContext(), "Error al generar enrutamiento. Verifica que ambos puntos sean alcanzables",  Toast.LENGTH_LONG).show();
+            Toast.makeText(getApplicationContext(), "Error al generar enrutamiento. Verifica que ambos puntos sean alcanzables", Toast.LENGTH_LONG).show();
             Log.e("Background Task", e.toString());
         }
     }
-    /**
-     * A class to parse the Google Places in JSON format
-     */
-    /**
-    private class parsing extends AsyncTask<String, Integer, List<List<HashMap<String, String>>>> {
-
-        // Parsing the data in non-ui thread
-        @Override
-        protected List<List<HashMap<String, String>>> doInBackground(String... jsonData) {
-            Log.d(TAG, "parsing: Recibiendo: " + jsonData);
-            JSONObject jObject;
-            List<List<HashMap<String, String>>> routes = null;
-            try {
-                jObject = new JSONObject(jsonData[0]);
-                DirectionsJSONParser parser = new DirectionsJSONParser();
-
-                routes = parser.parse(jObject);
-            } catch (Exception e) {
-                e.printStackTrace();
-            }
-            return routes;
-        }
-
-        @Override
-        protected void onPostExecute(List<List<HashMap<String, String>>> result) {
-            Log.d(TAG, "ParseTask: onPostExecute: Result: " + result);
-            ArrayList<LatLng> points;
-            PolylineOptions lineOptions = new PolylineOptions();
-            lineOptions.width(2);
-            lineOptions.color(Color.BLUE);
-            MarkerOptions markerOptions = new MarkerOptions();
-            try {
-                int cfor;
-                if(result.size()==0){
-                    Log.w(TAG, "onPostExecute: result.size no tiene valor. Se asignará un valor de 1 para el ciclo.");
-                    cfor = 1;
-                }else{
-                    Log.d(TAG, "onPostExecute: result.size: " + result.size());
-                    cfor = result.size();
-                }
-                Log.d(TAG, "onPostExecute: Entrando a ciclo For con cfor = " + cfor);
-                for (int i = 0; i < cfor; i++) {
-                    points = new ArrayList();
-
-                    List<HashMap<String, String>> path = result.get(i);
-                    Log.d(TAG, "onPostExecute: Entrando a ciclo For con path.size = " + path.size());
-                    for (int j = 0; j < path.size(); j++) {
-                        HashMap<String, String> point = path.get(j);
-
-                        if(j==0){    // Get distance from the list
-                            sDistance = point.get("distance");
-                            continue;
-                        }else if(j==1){ // Get duration from the list
-                            sDuration = point.get("duration");
-                            continue;
-                        }
-
-
-                        double lat = Double.parseDouble(point.get("lat"));
-                        double lng = Double.parseDouble(point.get("lng"));
-                        LatLng position = new LatLng(lat, lng);
-
-                        points.add(position);
-                    }
-
-                    lineOptions.addAll(points);
-                    lineOptions.width(12);
-                    lineOptions.color(Color.BLUE);
-                    lineOptions.geodesic(true);
-
-                }
-                Log.d(TAG, "onPostExecute: Almacenando Distancia: "+sDistance + ", Duración: "+sDuration);
-                if(drawing) {
-                    // Drawing polyline in the Google Map for the i-th route
-                    mMap.addPolyline(lineOptions);
-                }
-            } catch (Exception e) {
-                Toast.makeText(getApplicationContext(), "Error al generar enrutamiento. Verifica que ambos puntos sean alcanzables",  Toast.LENGTH_LONG).show();
-                Log.e("Background Task", e.toString());
-            }
-        }
-    }
-    */
 }
