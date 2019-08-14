@@ -4,40 +4,39 @@ import android.Manifest;
 import android.content.Intent;
 import android.content.pm.PackageManager;
 import android.graphics.Color;
-import android.location.Address;
-import android.location.Geocoder;
 import android.location.Location;
 import android.location.LocationListener;
 import android.location.LocationManager;
 import android.os.AsyncTask;
 import android.os.Bundle;
+import android.os.Handler;
+import android.os.Parcel;
 import android.support.annotation.NonNull;
 import android.support.v4.app.ActivityCompat;
 import android.support.v4.app.FragmentActivity;
 import android.support.v4.content.ContextCompat;
+import android.text.Editable;
+import android.text.TextWatcher;
 import android.util.Log;
-import android.view.KeyEvent;
 import android.view.View;
 import android.view.WindowManager;
-import android.view.inputmethod.EditorInfo;
-import android.widget.AdapterView;
-import android.widget.AutoCompleteTextView;
+import android.view.inputmethod.InputMethod;
+import android.view.inputmethod.InputMethodManager;
 import android.widget.Button;
 import android.widget.ImageView;
-import android.widget.TextView;
 import android.widget.Toast;
 
 import com.google.android.gms.common.ConnectionResult;
-import com.google.android.gms.common.GooglePlayServicesNotAvailableException;
-import com.google.android.gms.common.GooglePlayServicesRepairableException;
+import com.google.android.gms.common.api.ApiException;
 import com.google.android.gms.common.api.GoogleApiClient;
-import com.google.android.gms.common.api.PendingResult;
-import com.google.android.gms.common.api.ResultCallback;
 import com.google.android.gms.location.FusedLocationProviderClient;
 import com.google.android.gms.location.LocationServices;
 import com.google.android.gms.maps.CameraUpdate;
 import com.google.android.gms.maps.CameraUpdateFactory;
 import com.google.android.gms.maps.GoogleMap;
+import com.google.android.gms.tasks.OnFailureListener;
+import com.google.android.gms.tasks.OnSuccessListener;
+import com.google.android.libraries.places.api.Places;
 import com.google.android.gms.maps.OnMapReadyCallback;
 import com.google.android.gms.maps.SupportMapFragment;
 import com.google.android.gms.maps.model.BitmapDescriptorFactory;
@@ -48,15 +47,20 @@ import com.google.android.gms.maps.model.MarkerOptions;
 import com.google.android.gms.maps.model.PolylineOptions;
 import com.google.android.gms.tasks.OnCompleteListener;
 import com.google.android.gms.tasks.Task;
-import com.google.android.libraries.places.api.Places;
+import com.google.android.libraries.places.api.model.AutocompletePrediction;
+import com.google.android.libraries.places.api.model.AutocompleteSessionToken;
+import com.google.android.libraries.places.api.model.Place;
+import com.google.android.libraries.places.api.model.RectangularBounds;
+import com.google.android.libraries.places.api.model.TypeFilter;
+import com.google.android.libraries.places.api.net.FetchPlaceRequest;
+import com.google.android.libraries.places.api.net.FetchPlaceResponse;
+import com.google.android.libraries.places.api.net.FindAutocompletePredictionsRequest;
+import com.google.android.libraries.places.api.net.FindAutocompletePredictionsResponse;
 import com.google.android.libraries.places.api.net.PlacesClient;
-import com.google.android.libraries.places.compat.AutocompletePrediction;
-import com.google.android.libraries.places.compat.Place;
-import com.google.android.libraries.places.compat.PlaceBuffer;
-import com.google.android.libraries.places.compat.ui.PlacePicker;
 import com.google.firebase.database.DatabaseReference;
 import com.google.firebase.database.FirebaseDatabase;
-import com.google.maps.GeoApiContext;
+import com.mancj.materialsearchbar.MaterialSearchBar;
+import com.mancj.materialsearchbar.adapter.SuggestionsAdapter;
 
 import org.json.JSONObject;
 
@@ -90,26 +94,24 @@ public class MapActivity extends FragmentActivity implements OnMapReadyCallback,
     private static final String FINE_LOCATION = Manifest.permission.ACCESS_FINE_LOCATION;
     private static final String COARSE_LOCATION = Manifest.permission.ACCESS_COARSE_LOCATION;
     private static final int LOCATION_PERMISSION_REQUEST_CODE = 1234;
-    private static final float DEFAUL_ZOOM = 15f;
-    private static final int PLACE_PICCKER_REQUEST = 1;
-    private static final LatLngBounds LAT_LNG_BOUNDS = new LatLngBounds(new LatLng(28.555541, -106.187639), new LatLng(28.798408, -105.888866));
+    private static final float DEFAULT_ZOOM = 15f;
+    private static final RectangularBounds LAT_LNG_BOUNDS = RectangularBounds.newInstance(new LatLng(28.555541, -106.187639), new LatLng(28.798408, -105.888866));
     private static final String MY_API_KEY = BuildConfig.ApiKey;
     //Vars
     private Boolean mLocationPermissionGranted = false;
     private GoogleMap mMap;
-    private PlaceAutocompleteAdapter mPlaceAutocompleteAdapter;
     private GoogleApiClient mGoogleApiClient;
+    private PlacesClient placesClient;
+    private List<AutocompletePrediction> predictionList;
     private PlaceInfo mPlace;
     private Marker mMarker;
     private LatLng currentLatLng, originLatLng, destinationLatLng;
-    private GeoApiContext mGeoApiContext = null;
-    private PlacesClient placesClient;
     private int spOption, travelWay;
     private static String driver = "Test driver";
     private String cClient = "Test client";
     //Widgets
-    private AutoCompleteTextView mSearchText;
-    private ImageView mGps, mInfo, mPlacePicker, mClear, mAdd, mRouting;
+    private MaterialSearchBar materialSearchBar;
+    private ImageView mGps, mInfo, mAdd, mRouting;
     private Button btnRequest;
     private ArrayList markerPoints = new ArrayList();
     //Base de datos
@@ -125,21 +127,13 @@ public class MapActivity extends FragmentActivity implements OnMapReadyCallback,
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.map_activity);
-        mSearchText = findViewById(R.id.input_search);
+        materialSearchBar = findViewById(R.id.searchBar);
         mGps = findViewById(R.id.ic_gps);
         mInfo = findViewById(R.id.place_info);
-        mPlacePicker = findViewById(R.id.place_picker);
-        mClear = findViewById(R.id.ic_clear);
         mAdd = findViewById(R.id.ic_add_origin);
         mRouting = findViewById(R.id.ic_direction);
         btnRequest = findViewById(R.id.btnRequest);
         Log.d(TAG, "onCreate: Botones definidos");
-
-        // Initialize Places.
-        Places.initialize(getApplicationContext(), MY_API_KEY);
-
-        // Create a new Places client instance.
-        placesClient = Places.createClient(this);
 
         if (btnRequest == null) {
             Log.d(TAG, "onCreate: Referencia a btnRequest nula");
@@ -162,6 +156,160 @@ public class MapActivity extends FragmentActivity implements OnMapReadyCallback,
             LocationManager mLocationManager = (LocationManager) getSystemService(LOCATION_SERVICE);
             mLocationManager.requestLocationUpdates(LocationManager.GPS_PROVIDER, 0, 2, mLocationListener);
         }
+
+        Places.initialize(MapActivity.this, MY_API_KEY);
+        placesClient = Places.createClient(this);
+        final AutocompleteSessionToken token = AutocompleteSessionToken.newInstance();
+
+        materialSearchBar.setOnSearchActionListener(new MaterialSearchBar.OnSearchActionListener() {
+            @Override
+            public void onSearchStateChanged(boolean enabled) {
+
+            }
+
+            @Override
+            public void onSearchConfirmed(CharSequence text) {
+                startSearch(text.toString(), true, null, true);
+            }
+
+            @Override
+            public void onButtonClicked(int buttonCode) {
+                Log.i(TAG, "Button pressed: " + buttonCode);
+                if(buttonCode == MaterialSearchBar.BUTTON_NAVIGATION){
+                    //opening or closing a navigation drawer
+                }else if (buttonCode == MaterialSearchBar.BUTTON_BACK){
+                    new Handler().postDelayed(new Runnable() {
+                        @Override
+                        public void run() {
+                            materialSearchBar.clearSuggestions();
+                            materialSearchBar.disableSearch();
+                            materialSearchBar.hideSuggestionsList();
+                        }
+                    }, 1000);
+                }
+            }
+        });
+
+        materialSearchBar.addTextChangeListener(new TextWatcher() {
+            @Override
+            public void beforeTextChanged(CharSequence s, int start, int count, int after) {
+
+            }
+
+            @Override
+            public void onTextChanged(CharSequence s, int start, int before, int count) {
+                if(count == 0){
+                    materialSearchBar.clearSuggestions();
+                }else {
+                    FindAutocompletePredictionsRequest predictionsRequest = FindAutocompletePredictionsRequest.builder()
+                            .setCountry("mx")
+                            .setTypeFilter(TypeFilter.ADDRESS)
+                            .setSessionToken(token)
+                            .setQuery(s.toString())
+                            .setLocationRestriction(LAT_LNG_BOUNDS)
+                            .build();
+                    placesClient.findAutocompletePredictions(predictionsRequest).addOnCompleteListener(new OnCompleteListener<FindAutocompletePredictionsResponse>() {
+                        @Override
+                        public void onComplete(@NonNull Task<FindAutocompletePredictionsResponse> task) {
+                            if (task.isSuccessful()) {
+                                FindAutocompletePredictionsResponse predictionsResponse = task.getResult();
+                                if (predictionsResponse != null) {
+                                    predictionList = predictionsResponse.getAutocompletePredictions();
+                                    List<String> suggestionsList = new ArrayList<>();
+                                    Log.i(TAG, "Starting places search");
+                                    for (int i = 0; i < predictionList.size(); i++) {
+                                        AutocompletePrediction prediction = predictionList.get(i);
+                                        suggestionsList.add(prediction.getFullText(null).toString());
+                                        Log.i(TAG, prediction.getFullText(null).toString());
+                                    }
+                                    materialSearchBar.updateLastSuggestions(suggestionsList);
+                                    if (!materialSearchBar.isSuggestionsVisible()) {
+                                        materialSearchBar.showSuggestionsList();
+                                    }
+                                }
+                            } else {
+                                Log.w(TAG, "Prediction fetching task unsuccessful");
+                                Log.w(TAG, task.getException());
+                            }
+                        }
+                    });
+                }
+            }
+
+            @Override
+            public void afterTextChanged(Editable s) {
+
+            }
+        });
+
+        materialSearchBar.setSuggstionsClickListener(new SuggestionsAdapter.OnItemViewClickListener() {
+            @Override
+            public void OnItemClickListener(int position, View v) {
+                if(position >= predictionList.size()){
+                    return;
+                }
+                AutocompletePrediction selectedPrediction = predictionList.get(position);
+                String suggestion = materialSearchBar.getLastSuggestions().get(position).toString();
+                materialSearchBar.setText(suggestion);
+
+                new Handler().postDelayed(new Runnable() {
+                    @Override
+                    public void run() {
+                        materialSearchBar.clearSuggestions();
+                    }
+                }, 1000);
+
+                InputMethodManager imm = (InputMethodManager) getSystemService(INPUT_METHOD_SERVICE);
+                if (imm != null){
+                    imm.hideSoftInputFromWindow(materialSearchBar.getWindowToken(), InputMethodManager.HIDE_IMPLICIT_ONLY);
+                }
+                String placeId = selectedPrediction.getPlaceId();
+                List<Place.Field> placeFields = Arrays.asList(Place.Field.LAT_LNG);
+
+                final FetchPlaceRequest fetchPlaceRequest = FetchPlaceRequest.builder(placeId, placeFields).build();
+                placesClient.fetchPlace(fetchPlaceRequest).addOnSuccessListener(new OnSuccessListener<FetchPlaceResponse>() {
+                    @Override
+                    public void onSuccess(FetchPlaceResponse fetchPlaceResponse) {
+                        Place place = fetchPlaceResponse.getPlace();
+                        Log.i(TAG, "Place found: " + place.getName());
+                        LatLng placeLatLng = place.getLatLng();
+                        if(placeLatLng != null){
+                            try {
+                                mPlace = new PlaceInfo();
+                                mPlace.setName(place.getName().toString());
+                                mPlace.setAddress(place.getAddress().toString());
+                                //mPlace.setAttributions(place.getAttributions().toString());
+                                mPlace.setPhoneNumber(place.getPhoneNumber().toString());
+                                mPlace.setId(place.getId());
+                                mPlace.setWebsiteUri(place.getWebsiteUri());
+                                mPlace.setLatLng(place.getLatLng());
+                                mPlace.setRating(place.getRating());
+                                Log.d(TAG, "onResult: place: " + mPlace.toString());
+                            }catch (NullPointerException e){
+                                Log.e(TAG, "onResult: NullPinterException" + e.getMessage());
+                            }
+                            moveCamera(placeLatLng, DEFAULT_ZOOM, mPlace);
+                        }
+                    }
+                }).addOnFailureListener(new OnFailureListener() {
+                    @Override
+                    public void onFailure(@NonNull Exception e) {
+                        if(e instanceof ApiException){
+                            ApiException apiException = (ApiException) e;
+                            apiException.printStackTrace();
+                            int statusCode = apiException.getStatusCode();
+                            Log.i(TAG, "Place not found: " + e.getMessage());
+                            Log.i(TAG, "Status code: " + statusCode);
+                        }
+                    }
+                });
+            }
+
+            @Override
+            public void OnItemDeleteListener(int position, View v) {
+
+            }
+        });
     }
 
 
@@ -198,45 +346,6 @@ public class MapActivity extends FragmentActivity implements OnMapReadyCallback,
 
     private void init(){
         Log.d(TAG, "init: Iniciando");
-
-        mGoogleApiClient = new GoogleApiClient.Builder(this).enableAutoManage(this, this).build();
-        mSearchText.setOnItemClickListener(mAutoCompleteClickListener);
-
-        mPlaceAutocompleteAdapter = new PlaceAutocompleteAdapter(this, mGoogleApiClient, LAT_LNG_BOUNDS, null);
-
-        mSearchText.setAdapter(mPlaceAutocompleteAdapter);
-
-        mSearchText.setOnEditorActionListener(new TextView.OnEditorActionListener() {
-            @Override
-            public boolean onEditorAction(TextView v, int actionId, KeyEvent event) {
-                if(actionId == EditorInfo.IME_ACTION_SEARCH || actionId == EditorInfo.IME_ACTION_DONE || event.getAction() == KeyEvent.ACTION_DOWN || event.getAction() == KeyEvent.KEYCODE_ENTER){
-                    //Execute method for searching
-                    geoLocate();
-                }
-                return false;
-            }
-        });
-        mClear.setOnClickListener(new View.OnClickListener() {
-            @Override
-            public void onClick(View v) {
-                mSearchText.setText("");
-            }
-        });
-        mPlacePicker.setOnClickListener(new View.OnClickListener() {
-            @Override
-            public void onClick(View v) {
-                PlacePicker.IntentBuilder builder = new PlacePicker.IntentBuilder();
-                try {
-                    startActivityForResult(builder.build(MapActivity.this), PLACE_PICCKER_REQUEST);
-                } catch (GooglePlayServicesRepairableException e) {
-                    Log.e(TAG, "onClick: GooglePlayServicesRepairableException: " + e.getMessage());
-                } catch (GooglePlayServicesNotAvailableException e) {
-                    e.printStackTrace();
-                    Log.e(TAG, "onClick: GooglePlayServicesNotAvailableException: " + e.getMessage());
-                }
-            }
-        });
-        hideSoftKeyboard();
         //Centrar cámara en ubicación actual y asignarla como origen
         mGps.setOnClickListener(new View.OnClickListener() {
             @Override
@@ -244,7 +353,7 @@ public class MapActivity extends FragmentActivity implements OnMapReadyCallback,
                 Log.d(TAG, "onClick: Clic en ícono de GPS");
                 mMap.clear();
                 btnRequest.setVisibility(View.INVISIBLE);
-                moveCamera(currentLatLng, DEFAUL_ZOOM, getString(R.string.myLocation));
+                moveCamera(currentLatLng, DEFAULT_ZOOM, getString(R.string.myLocation));
                 originLatLng = currentLatLng;
                 Toast.makeText(MapActivity.this, R.string.currentSet, Toast.LENGTH_SHORT).show();
             }
@@ -328,44 +437,11 @@ public class MapActivity extends FragmentActivity implements OnMapReadyCallback,
                     }
                     mMap.clear();
                     btnRequest.setVisibility(View.INVISIBLE);
-                    moveCamera(currentLatLng, DEFAUL_ZOOM, getString(R.string.myLocation));
+                    moveCamera(currentLatLng, DEFAULT_ZOOM, getString(R.string.myLocation));
                     Toast.makeText(MapActivity.this, R.string.requestSended, Toast.LENGTH_SHORT).show();
                 }
             }
         });
-    }
-
-    protected void onActivityResult(int requestCode, int resultCode, Intent data){
-        if (requestCode == PLACE_PICCKER_REQUEST){
-            if (resultCode == RESULT_OK){
-                Place place = PlacePicker.getPlace(this, data);
-                PendingResult<PlaceBuffer> placeResult = Places.GeoDataApi.getPlaceById(mGoogleApiClient, place.getId());
-                placeResult.setResultCallback(mUpdatePlaceDetailsCallback);
-                //String toastMsg = String.format("Place: %s", place.getName());
-                //Toast.makeText(this, toastMsg, Toast.LENGTH_LONG).show();
-            }
-        }
-    }
-
-    private void geoLocate(){
-        Log.d(TAG, "geoLocate: geolocating");
-        String searchString = mSearchText.getText().toString();
-        Geocoder geocoder = new Geocoder(MapActivity.this);
-        List<Address> list = new ArrayList<>();
-        try{
-            list = geocoder.getFromLocationName(searchString, 1);
-        }catch (IOException e){
-            Log.e(TAG, "geoLocate: Excepción IO" + e.getMessage());
-        }
-
-        if(list.size() > 0){
-            Address address = list.get(0);
-
-            Log.d(TAG, "geoLocate: Ubicación encontrada: " + address.toString());
-            //Toast.makeText(this, address.toString(), Toast.LENGTH_SHORT).show();
-
-            moveCamera(new LatLng(address.getLatitude(), address.getLongitude()), DEFAUL_ZOOM, address.getAddressLine(0));
-        }
     }
 
     @Override
@@ -414,7 +490,7 @@ public class MapActivity extends FragmentActivity implements OnMapReadyCallback,
                             if (spOption == 3){
                                 destinationLatLng = originLatLng;
                             }
-                            moveCamera(currentLatLng, DEFAUL_ZOOM, getString(R.string.myLocation));
+                            moveCamera(currentLatLng, DEFAULT_ZOOM, getString(R.string.myLocation));
                         }else{
                             Log.d(TAG, "onComplete: La ubicación actual es nula");
                             Toast.makeText(MapActivity.this, "Incapaz de conseguir ubicación actual", Toast.LENGTH_SHORT).show();
@@ -525,51 +601,6 @@ public class MapActivity extends FragmentActivity implements OnMapReadyCallback,
     private void hideSoftKeyboard(){
         this.getWindow().setSoftInputMode(WindowManager.LayoutParams.SOFT_INPUT_STATE_HIDDEN);
     }
-
-    /*-------------------------------------- Google Places autocomplete suggestions --------------------------------------------*/
-    private AdapterView.OnItemClickListener mAutoCompleteClickListener = new AdapterView.OnItemClickListener() {
-        @Override
-        public void onItemClick(AdapterView<?> parent, View v, int position, long id) {
-
-
-            final AutocompletePrediction item = mPlaceAutocompleteAdapter.getItem(position);
-            final String placeId = item.getPlaceId();
-
-            PendingResult<PlaceBuffer> placeResult = Places.GeoDataApi.getPlaceById(mGoogleApiClient, placeId);
-            placeResult.setResultCallback(mUpdatePlaceDetailsCallback);
-        }
-    };
-
-    private ResultCallback<PlaceBuffer> mUpdatePlaceDetailsCallback = new ResultCallback<PlaceBuffer>() {
-        @Override
-        public void onResult(@NonNull PlaceBuffer places) {
-            if(!places.getStatus().isSuccess()){
-                Log.d(TAG, "onResult: Consulta de lugar no completada de forma exitosa: "+places.getStatus().toString());
-                places.release();
-                return;
-            }else{
-                final Place place = places.get(0);
-
-                try {
-                    mPlace = new PlaceInfo();
-                    mPlace.setName(place.getName().toString());
-                    mPlace.setAddress(place.getAddress().toString());
-                    //mPlace.setAttributions(place.getAttributions().toString());
-                    mPlace.setPhoneNumber(place.getPhoneNumber().toString());
-                    mPlace.setId(place.getId());
-                    mPlace.setWebsiteUri(place.getWebsiteUri());
-                    mPlace.setLatLng(place.getLatLng());
-                    mPlace.setRating(place.getRating());
-                    Log.d(TAG, "onResult: place: " + mPlace.toString());
-                }catch (NullPointerException e){
-                    Log.e(TAG, "onResult: NullPinterException" + e.getMessage());
-                }
-                moveCamera(new LatLng(place.getViewport().getCenter().latitude, place.getViewport().getCenter().longitude), DEFAUL_ZOOM, mPlace);
-
-                places.release();
-            }
-        }
-    };
 
     //Métodos de enrutamiento
     //Ejecutando enrutamiento

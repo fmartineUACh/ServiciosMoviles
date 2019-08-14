@@ -15,10 +15,10 @@ public class PlaceInfo {
     private String id;
     private Uri websiteUri;
     private LatLng latLng;
-    private float rating;
+    private double rating;
     private String attributions;
 
-    public PlaceInfo(String name, String address, String phoneNumber, String id, Uri websiteUri, LatLng latLng, float rating, String attributions) {
+    public PlaceInfo(String name, String address, String phoneNumber, String id, Uri websiteUri, LatLng latLng, double rating, String attributions) {
         this.name = name;
         this.address = address;
         this.phoneNumber = phoneNumber;
@@ -81,11 +81,11 @@ public class PlaceInfo {
         this.latLng = latLng;
     }
 
-    public float getRating() {
+    public double getRating() {
         return rating;
     }
 
-    public void setRating(float rating) {
+    public void setRating(Double rating) {
         this.rating = rating;
     }
 
