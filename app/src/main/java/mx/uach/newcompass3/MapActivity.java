@@ -133,12 +133,12 @@ public class MapActivity extends FragmentActivity implements OnMapReadyCallback,
         mAdd = findViewById(R.id.ic_add_origin);
         mRouting = findViewById(R.id.ic_direction);
         btnRequest = findViewById(R.id.btnRequest);
-        Log.d(TAG, "onCreate: Botones definidos");
+        Log.i(TAG, "onCreate: Botones definidos");
 
         if (btnRequest == null) {
-            Log.d(TAG, "onCreate: Referencia a btnRequest nula");
+            Log.i(TAG, "onCreate: Referencia a btnRequest nula");
             if (findViewById(R.id.btnRequest) == null) {
-                Log.d(TAG, "onCreate: Referencia a elemento de layout nula");
+                Log.i(TAG, "onCreate: Referencia a elemento de layout nula");
             }
         }
         getLocationPermission();
@@ -169,7 +169,8 @@ public class MapActivity extends FragmentActivity implements OnMapReadyCallback,
 
             @Override
             public void onSearchConfirmed(CharSequence text) {
-                startSearch(text.toString(), true, null, true);
+                /**Crear método de búsqueda*/
+                //materialSearchBar.getLastSuggestions();
             }
 
             @Override
@@ -177,7 +178,11 @@ public class MapActivity extends FragmentActivity implements OnMapReadyCallback,
                 Log.i(TAG, "Button pressed: " + buttonCode);
                 if(buttonCode == MaterialSearchBar.BUTTON_NAVIGATION){
                     //opening or closing a navigation drawer
+                    Log.i(TAG, "Attempt to open nav menu");
                 }else if (buttonCode == MaterialSearchBar.BUTTON_BACK){
+                    mMap.clear();
+                    if(spOption != 3) btnRequest.setVisibility(View.INVISIBLE);
+                    destinationLatLng = currentLatLng;
                     new Handler().postDelayed(new Runnable() {
                         @Override
                         public void run() {
@@ -201,9 +206,8 @@ public class MapActivity extends FragmentActivity implements OnMapReadyCallback,
                 if(count == 0){
                     materialSearchBar.clearSuggestions();
                 }else {
-                    FindAutocompletePredictionsRequest predictionsRequest = FindAutocompletePredictionsRequest.builder()
+                    final FindAutocompletePredictionsRequest predictionsRequest = FindAutocompletePredictionsRequest.builder()
                             .setCountry("mx")
-                            .setTypeFilter(TypeFilter.ADDRESS)
                             .setSessionToken(token)
                             .setQuery(s.toString())
                             .setLocationRestriction(LAT_LNG_BOUNDS)
@@ -215,12 +219,13 @@ public class MapActivity extends FragmentActivity implements OnMapReadyCallback,
                                 FindAutocompletePredictionsResponse predictionsResponse = task.getResult();
                                 if (predictionsResponse != null) {
                                     predictionList = predictionsResponse.getAutocompletePredictions();
+                                    Log.i(TAG, "PredictionList: " + predictionList.toString());
                                     List<String> suggestionsList = new ArrayList<>();
                                     Log.i(TAG, "Starting places search");
+                                    suggestionsList.clear();
                                     for (int i = 0; i < predictionList.size(); i++) {
                                         AutocompletePrediction prediction = predictionList.get(i);
                                         suggestionsList.add(prediction.getFullText(null).toString());
-                                        Log.i(TAG, prediction.getFullText(null).toString());
                                     }
                                     materialSearchBar.updateLastSuggestions(suggestionsList);
                                     if (!materialSearchBar.isSuggestionsVisible()) {
@@ -245,11 +250,14 @@ public class MapActivity extends FragmentActivity implements OnMapReadyCallback,
         materialSearchBar.setSuggstionsClickListener(new SuggestionsAdapter.OnItemViewClickListener() {
             @Override
             public void OnItemClickListener(int position, View v) {
+                Log.i(TAG, "Element selected: " + position);
                 if(position >= predictionList.size()){
+                    Log.w(TAG, "Not a valid result. List size: " + predictionList.size());
                     return;
                 }
                 AutocompletePrediction selectedPrediction = predictionList.get(position);
                 String suggestion = materialSearchBar.getLastSuggestions().get(position).toString();
+                Log.i(TAG, "Suggestion: " + suggestion);
                 materialSearchBar.setText(suggestion);
 
                 new Handler().postDelayed(new Runnable() {
@@ -271,20 +279,20 @@ public class MapActivity extends FragmentActivity implements OnMapReadyCallback,
                     @Override
                     public void onSuccess(FetchPlaceResponse fetchPlaceResponse) {
                         Place place = fetchPlaceResponse.getPlace();
-                        Log.i(TAG, "Place found: " + place.getName());
+                        Log.i(TAG, "Place found: " + place.toString());
                         LatLng placeLatLng = place.getLatLng();
                         if(placeLatLng != null){
                             try {
                                 mPlace = new PlaceInfo();
-                                mPlace.setName(place.getName().toString());
-                                mPlace.setAddress(place.getAddress().toString());
+                                mPlace.setName(place.getName());
+                                mPlace.setAddress(place.getAddress());
                                 //mPlace.setAttributions(place.getAttributions().toString());
-                                mPlace.setPhoneNumber(place.getPhoneNumber().toString());
+                                mPlace.setPhoneNumber(place.getPhoneNumber());
                                 mPlace.setId(place.getId());
                                 mPlace.setWebsiteUri(place.getWebsiteUri());
                                 mPlace.setLatLng(place.getLatLng());
                                 mPlace.setRating(place.getRating());
-                                Log.d(TAG, "onResult: place: " + mPlace.toString());
+                                Log.i(TAG, "onSuccess: place: " + mPlace.toString());
                             }catch (NullPointerException e){
                                 Log.e(TAG, "onResult: NullPinterException" + e.getMessage());
                             }
@@ -320,10 +328,10 @@ public class MapActivity extends FragmentActivity implements OnMapReadyCallback,
             temp.setLatitude(currentLatLng.latitude);
             temp.setLongitude(currentLatLng.longitude);
             float distance = location.distanceTo(temp);
-            //Log.d(TAG, "onLocationChanged: Distance: " + distance);
+            //Log.i(TAG, "onLocationChanged: Distance: " + distance);
             if(distance > 2){
                 currentLatLng = new LatLng(location.getLatitude(), location.getLongitude());
-                Log.d(TAG, "onLocationChanged: currentLatLng: " + currentLatLng);
+                Log.i(TAG, "onLocationChanged: currentLatLng: " + currentLatLng);
                 //Toast.makeText(MapActivity.this, "currentLatLng: " + currentLatLng, Toast.LENGTH_SHORT).show();
             }
         }
@@ -345,14 +353,21 @@ public class MapActivity extends FragmentActivity implements OnMapReadyCallback,
     };
 
     private void init(){
-        Log.d(TAG, "init: Iniciando");
+        Log.i(TAG, "init: Iniciando");
         //Centrar cámara en ubicación actual y asignarla como origen
         mGps.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View v) {
-                Log.d(TAG, "onClick: Clic en ícono de GPS");
+                Log.i(TAG, "onClick: Clic en ícono de GPS");
+                new Handler().postDelayed(new Runnable() {
+                    @Override
+                    public void run() {
+                        materialSearchBar.disableSearch();
+                        materialSearchBar.hideSuggestionsList();
+                    }
+                }, 1000);
                 mMap.clear();
-                btnRequest.setVisibility(View.INVISIBLE);
+                if(spOption != 3) btnRequest.setVisibility(View.INVISIBLE);
                 moveCamera(currentLatLng, DEFAULT_ZOOM, getString(R.string.myLocation));
                 originLatLng = currentLatLng;
                 Toast.makeText(MapActivity.this, R.string.currentSet, Toast.LENGTH_SHORT).show();
@@ -362,7 +377,7 @@ public class MapActivity extends FragmentActivity implements OnMapReadyCallback,
         mAdd.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View v) {
-                Log.d(TAG, "Asignando origen distinto a la ubicación actual");
+                Log.i(TAG, "Asignando origen distinto a la ubicación actual");
                 if(destinationLatLng != null) {
                     originLatLng = destinationLatLng;
                     if(travelWay == 0) {
@@ -379,13 +394,13 @@ public class MapActivity extends FragmentActivity implements OnMapReadyCallback,
         mInfo.setOnClickListener(new View.OnClickListener(){
             @Override
             public void onClick(View v){
-                Log.d(TAG, "onClick: Clic en información del lugar");
+                Log.i(TAG, "onClick: Clic en información del lugar");
                 try{
                     if(mMarker.isInfoWindowShown()){
                         mMarker.hideInfoWindow();
                     }
                     else{
-                        Log.d(TAG, "onClick: Información del lugar: " + mPlace.toString());
+                        Log.i(TAG, "onClick: Información del lugar: " + mPlace.toString());
                         mMarker.showInfoWindow();
                     }
                 }catch (NullPointerException e){
@@ -396,52 +411,57 @@ public class MapActivity extends FragmentActivity implements OnMapReadyCallback,
         mRouting.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View v) {
-                Log.d(TAG, "mRouting: Preparando enrutamiento");
+                Log.i(TAG, "mRouting: Preparando enrutamiento");
                 if (spOption == 3){
-                    Log.d(TAG, "mRouting: Servicio de asistencia vial. Enviando un solo conjunto de coordenadas");
+                    Log.i(TAG, "mRouting: Servicio de asistencia vial. Enviando un solo conjunto de coordenadas");
                     originLatLng = destinationLatLng;
                 }else if(travelWay == 0){
-                    Log.d(TAG, "mRouting: Enviando enrutameinto estándar\noriginLatLng: " + originLatLng + "\ndestinationLatLng: " + destinationLatLng);
+                    Log.i(TAG, "mRouting: Enviando enrutameinto estándar\noriginLatLng: " + originLatLng + "\ndestinationLatLng: " + destinationLatLng);
                     routing(v, originLatLng, destinationLatLng);
                 }else{
-                    Log.d(TAG, "mRouting: Enviando enrutameinto invertido\noriginLatLng: " + destinationLatLng + "\ndestinationLatLng: " + originLatLng);
+                    Log.i(TAG, "mRouting: Enviando enrutameinto invertido\noriginLatLng: " + destinationLatLng + "\ndestinationLatLng: " + originLatLng);
                     routing(v, destinationLatLng, originLatLng);
                 }
-                Log.d(TAG, "mRouting: Enrutamiento enviado");
+                Log.i(TAG, "mRouting: Enrutamiento enviado");
                 btnRequest.setVisibility(View.VISIBLE);
             }
         });
         btnRequest.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View v) {
-                Date cDate = Calendar.getInstance().getTime();
-                SimpleDateFormat df = new SimpleDateFormat("dd-MM-yyyy"), tf = new SimpleDateFormat("kk:mm:ss");
                 if (originLatLng == null || destinationLatLng == null) {
                     Log.e(TAG, "btnRequest: Coordenadas con valor nulo.");
                 }else{
-                    DatabaseReference lastRef = activeRef.push();
-                    lastRef.setValue(new RequestingService(spOption, false,
-                            originLatLng.latitude, originLatLng.longitude, destinationLatLng.latitude,
-                            destinationLatLng.longitude, cClient, df.format(cDate), tf.format(cDate)));
-                    if (spOption == 3){
-                        Intent receiveIntent = getIntent();
-                        RoadSupport rs = new RoadSupport(receiveIntent.getBooleanExtra("rsFlatTire", false),
-                                receiveIntent.getBooleanExtra("rsGas", false),
-                                receiveIntent.getBooleanExtra("rsLeak", false),
-                                receiveIntent.getBooleanExtra("rsBrake", false),
-                                receiveIntent.getBooleanExtra("rsBattery", false));
-                        lastRef.child("roadSupport").setValue(rs);
-                    }else if (spOption == 4){
-                        Intent receiveIntent = getIntent();
-                        lastRef.child("fOrder").setValue(receiveIntent.getStringExtra("fOrder"));
-                    }
-                    mMap.clear();
-                    btnRequest.setVisibility(View.INVISIBLE);
-                    moveCamera(currentLatLng, DEFAULT_ZOOM, getString(R.string.myLocation));
-                    Toast.makeText(MapActivity.this, R.string.requestSended, Toast.LENGTH_SHORT).show();
+                    Log.i(TAG, "Sending request to database");
+                    //sendRequestToDatabase();
                 }
             }
         });
+    }
+
+    private void sendRequestToDatabase() {
+        Date cDate = Calendar.getInstance().getTime();
+        SimpleDateFormat df = new SimpleDateFormat("dd-MM-yyyy"), tf = new SimpleDateFormat("kk:mm:ss");
+        DatabaseReference lastRef = activeRef.push();
+        lastRef.setValue(new RequestingService(spOption, false,
+                originLatLng.latitude, originLatLng.longitude, destinationLatLng.latitude,
+                destinationLatLng.longitude, cClient, df.format(cDate), tf.format(cDate)));
+        mMap.clear();
+        btnRequest.setVisibility(View.INVISIBLE);
+        moveCamera(currentLatLng, DEFAULT_ZOOM, getString(R.string.myLocation));
+        Toast.makeText(MapActivity.this, R.string.requestSended, Toast.LENGTH_SHORT).show();
+        if (spOption == 3){
+            Intent receiveIntent = getIntent();
+            RoadSupport rs = new RoadSupport(receiveIntent.getBooleanExtra("rsFlatTire", false),
+                    receiveIntent.getBooleanExtra("rsGas", false),
+                    receiveIntent.getBooleanExtra("rsLeak", false),
+                    receiveIntent.getBooleanExtra("rsBrake", false),
+                    receiveIntent.getBooleanExtra("rsBattery", false));
+            lastRef.child("roadSupport").setValue(rs);
+        }else if (spOption == 4){
+            Intent receiveIntent = getIntent();
+            lastRef.child("fOrder").setValue(receiveIntent.getStringExtra("fOrder"));
+        }
     }
 
     @Override
@@ -456,7 +476,7 @@ public class MapActivity extends FragmentActivity implements OnMapReadyCallback,
         mMap = googleMap;
         markerPoints.clear();
         mMap.clear();
-
+        if(spOption != 3) btnRequest.setVisibility(View.INVISIBLE);
         if (mLocationPermissionGranted) {
             getDeviceLocation();
 
@@ -473,7 +493,7 @@ public class MapActivity extends FragmentActivity implements OnMapReadyCallback,
     }
 
     private void getDeviceLocation(){
-        Log.d(TAG, "getDeviceLocation: Obteniendo la ubicación actual del dispositivo");
+        Log.i(TAG, "getDeviceLocation: Obteniendo la ubicación actual del dispositivo");
         FusedLocationProviderClient mFusedLocationProviderClient = LocationServices.getFusedLocationProviderClient(this);
         try{
             if(mLocationPermissionGranted){
@@ -482,17 +502,21 @@ public class MapActivity extends FragmentActivity implements OnMapReadyCallback,
                     @Override
                     public void onComplete(@NonNull Task task) {
                         if(task.isSuccessful()){
-                            Log.d(TAG, "onComplete: ¡Ubicación encontrada!");
+                            Log.i(TAG, "onComplete: ¡Ubicación encontrada!");
                             Location currentLocation = (Location) task.getResult();
 
                             currentLatLng = new LatLng(currentLocation.getLatitude(), currentLocation.getLongitude());
                             originLatLng = currentLatLng;
                             if (spOption == 3){
                                 destinationLatLng = originLatLng;
+                                btnRequest.setVisibility(View.VISIBLE);
+                                Log.i(TAG, "Current coordinates:\n" + currentLatLng
+                                        + "\n" + originLatLng
+                                        + "\n" + destinationLatLng);
                             }
                             moveCamera(currentLatLng, DEFAULT_ZOOM, getString(R.string.myLocation));
                         }else{
-                            Log.d(TAG, "onComplete: La ubicación actual es nula");
+                            Log.i(TAG, "onComplete: La ubicación actual es nula");
                             Toast.makeText(MapActivity.this, "Incapaz de conseguir ubicación actual", Toast.LENGTH_SHORT).show();
                         }
                     }
@@ -504,30 +528,33 @@ public class MapActivity extends FragmentActivity implements OnMapReadyCallback,
     }
 
     private void moveCamera(LatLng latLng, float zoom, PlaceInfo placeInfo){
-        Log.d(TAG, "moveCamera: Moviendo la cámara a:\nLat: " + latLng.latitude + "\nLng: " + latLng.longitude);
+        Log.i(TAG, "moveCamera: Moviendo la cámara a:\nLat: " + latLng.latitude + "\nLng: " + latLng.longitude);
         mMap.animateCamera(CameraUpdateFactory.newLatLngZoom(latLng, zoom));
 
         mMap.clear();
+        if(spOption != 3) btnRequest.setVisibility(View.INVISIBLE);
         markerPoints.clear();
         mMap.setInfoWindowAdapter(new CustomInfoWindowAdapter(MapActivity.this));
         if(placeInfo != null){
+            Log.i(TAG, "Creating placeInfo");
             try{
-                String snnippet = "Dirección: "+ placeInfo.getAddress() + "\n" +
+                String snippet = "Dirección: "+ placeInfo.getAddress() + "\n" +
                         "Teléfono: "+ placeInfo.getPhoneNumber() + "\n" +
                         "Sitio web: "+ placeInfo.getWebsiteUri() + "\n" +
                         "Costo: "+ placeInfo.getRating() + "\n";
-                MarkerOptions options = new MarkerOptions().position(latLng).title(placeInfo.getName()).snippet(snnippet);
+                MarkerOptions options = new MarkerOptions().position(latLng).title(placeInfo.getName()).snippet(snippet);
                 mMarker = mMap.addMarker(options);
 
             }catch (NullPointerException e){
                 Log.e(TAG, "moveCamera: NullPointerException: " + e.getMessage());
             }
         }else{
+            Log.i(TAG, "No placeInfo");
             mMap.addMarker(new MarkerOptions().position(latLng));
         }
         if(originLatLng != latLng) {
             destinationLatLng = latLng;
-            Log.d(TAG, "moveCamera: Valor asigando a destinationLatLng: " + destinationLatLng);
+            Log.i(TAG, "moveCamera: Valor asigando a destinationLatLng: " + destinationLatLng);
         }else{
             Log.w(TAG, "moveCamera: Se ha intentado asignar el valor de origen al destino, pero ha sido evitado.");
         }
@@ -535,7 +562,7 @@ public class MapActivity extends FragmentActivity implements OnMapReadyCallback,
     }
 
     private void moveCamera(LatLng latLng, float zoom, String title){
-        Log.d(TAG, "moveCamera: Moviendo la cámara a:\nLat: " + latLng.latitude + "\nLng: " + latLng.longitude);
+        Log.i(TAG, "moveCamera: Moviendo la cámara a:\nLat: " + latLng.latitude + "\nLng: " + latLng.longitude);
         mMap.moveCamera(CameraUpdateFactory.newLatLngZoom(latLng, zoom));
 
         if(!title.equals(getString(R.string.myLocation))) {
@@ -545,7 +572,7 @@ public class MapActivity extends FragmentActivity implements OnMapReadyCallback,
         }
         if(originLatLng != latLng) {
             destinationLatLng = latLng;
-            Log.d(TAG, "moveCamera: Valor asigando a destinationLatLng: " + destinationLatLng);
+            Log.i(TAG, "moveCamera: Valor asigando a destinationLatLng: " + destinationLatLng);
         }else{
             Log.w(TAG, "moveCamera: Se ha intentado asignar el valor de origen al destino, pero ha sido evitado.");
         }
@@ -553,13 +580,13 @@ public class MapActivity extends FragmentActivity implements OnMapReadyCallback,
     }
 
     private void initMap() {
-        Log.d(TAG, "initMap: Iniciando mapa");
+        Log.i(TAG, "initMap: Iniciando mapa");
         SupportMapFragment mapFragment = (SupportMapFragment) getSupportFragmentManager().findFragmentById(R.id.map);
         mapFragment.getMapAsync(MapActivity.this);
     }
 
     private void getLocationPermission(){
-        Log.d(TAG, "getLocationPermission: Obteniendo permisos de ubicación");
+        Log.i(TAG, "getLocationPermission: Obteniendo permisos de ubicación");
         String[] permissions = {Manifest.permission.ACCESS_FINE_LOCATION, Manifest.permission.ACCESS_COARSE_LOCATION};
 
         if(ContextCompat.checkSelfPermission(this.getApplicationContext(), FINE_LOCATION) == PackageManager.PERMISSION_GRANTED){
@@ -576,7 +603,7 @@ public class MapActivity extends FragmentActivity implements OnMapReadyCallback,
 
     @Override
     public void onRequestPermissionsResult(int requestCode, @NonNull String[] permissions, @NonNull int[] grantResults){
-        Log.d(TAG, "onRequestPermissionresult: Llamado");
+        Log.i(TAG, "onRequestPermissionresult: Llamado");
         mLocationPermissionGranted = false;
 
         switch(requestCode){
@@ -585,11 +612,11 @@ public class MapActivity extends FragmentActivity implements OnMapReadyCallback,
                     for (int i = 0; i < grantResults.length; i++) {
                         if(grantResults[i] != PackageManager.PERMISSION_GRANTED){
                             mLocationPermissionGranted = false;
-                            Log.d(TAG, "onRequestPermissionResult: Permisos denegados");
+                            Log.i(TAG, "onRequestPermissionResult: Permisos denegados");
                             return;
                         }
                     }
-                    Log.d(TAG, "onRequestPermissionResult: Permisos concedidos");
+                    Log.i(TAG, "onRequestPermissionResult: Permisos concedidos");
                     mLocationPermissionGranted = true;
                     //Iniciar mapa
                     initMap();
@@ -607,29 +634,26 @@ public class MapActivity extends FragmentActivity implements OnMapReadyCallback,
     public void routing(View view, LatLng origin, LatLng destination){
         //Este código debe ir encerrado dentro de condiciones pues debe comportarse distinto según la opción elegida por el usuario en la pantalla anterior
         //Comportamiento por defecto: ir de la ubicación actual al punto señalado
-        Log.d(TAG, "Routing:\norigin: " + origin + "\ndestination: " +destination);
+        Log.i(TAG, "Routing:\norigin: " + origin + "\ndestination: " +destination);
         if(origin!=null && destination!=null) {
             if(origin != destination) {
                 //Ajuste de marcadores y cámara
                 mMap.clear();
+                if(spOption != 3) btnRequest.setVisibility(View.INVISIBLE);
                 Marker marker;
-                LatLngBounds.Builder builder = new LatLngBounds.Builder();
                 marker = mMap.addMarker(new MarkerOptions().position(origin).title("Origin").icon(BitmapDescriptorFactory.defaultMarker(BitmapDescriptorFactory.HUE_AZURE)));
-                builder.include(marker.getPosition());
                 mMap.addMarker(new MarkerOptions().position(mMarker.getPosition()).title(mMarker.getTitle()));
-                builder.include(mMarker.getPosition());
-                LatLngBounds bounds = builder.build();
-                int padding = 200; // offset from edges of the map in pixels
-                CameraUpdate cu = CameraUpdateFactory.newLatLngBounds(bounds, padding);
-                hideSoftKeyboard();
-                mMap.animateCamera(cu);
+                List<LatLng> latLngList = new ArrayList<>();
+                latLngList.add(marker.getPosition());
+                latLngList.add(mMarker.getPosition());
+                cameraToBounds(latLngList);
                 try {
                     String url = getDirectionsUrl(origin, destination);
-                    Log.d(TAG, "Routing: Obteniendo url de dirección.\norigin: " + origin + "\ndestination: " + destination + "\nurl: " + url);
+                    Log.i(TAG, "Routing: Obteniendo url de dirección.\norigin: " + origin + "\ndestination: " + destination + "\nurl: " + url);
                     DownloadTask downloadTask = new DownloadTask();
                     // Start downloading json data from Google Directions API
                     String result = downloadTask.execute(url).get();
-                    Log.d(TAG, "Routing: Descarga de datos Json realizada con éxito");
+                    Log.i(TAG, "Routing: Descarga de datos Json realizada con éxito");
                     List<List<HashMap<String, String>>> routes = parsing(result);
                     mapping(routes);
                 } catch (NullPointerException e) {
@@ -649,8 +673,19 @@ public class MapActivity extends FragmentActivity implements OnMapReadyCallback,
         }
     }
 
+    private void cameraToBounds(List<LatLng> latLngList) {
+        LatLngBounds.Builder builder = new LatLngBounds.Builder();
+        for (LatLng latLng : latLngList) {
+            builder.include(latLng);
+        }
+        LatLngBounds bounds = builder.build();
+        int padding = 200; // offset from edges of the map in pixels
+        CameraUpdate cu = CameraUpdateFactory.newLatLngBounds(bounds, padding);
+        mMap.animateCamera(cu);
+    }
+
     private List<List<HashMap<String, String>>> parsing(String... jsonData) {
-        Log.d(TAG, "parsing: Recibiendo: " + Arrays.toString(jsonData));
+        Log.i(TAG, "parsing: Recibiendo: " + Arrays.toString(jsonData));
         JSONObject jObject;
         List<List<HashMap<String, String>>> routes = null;
         try {
@@ -665,7 +700,7 @@ public class MapActivity extends FragmentActivity implements OnMapReadyCallback,
     }
 
     private void mapping(List<List<HashMap<String, String>>> result){
-        Log.d(TAG, "mapping: mapping: Result: " + result);
+        Log.i(TAG, "mapping: mapping: Result: " + result);
         ArrayList<LatLng> points;
         PolylineOptions lineOptions = new PolylineOptions();
         lineOptions.width(2);
@@ -680,24 +715,24 @@ public class MapActivity extends FragmentActivity implements OnMapReadyCallback,
                 Log.w(TAG, "mapping: result.size no tiene valor. Se asignará un valor de 1 para el ciclo.");
                 cfor = 1;
             }else{
-                Log.d(TAG, "mapping: result.size: " + result.size());
+                Log.i(TAG, "mapping: result.size: " + result.size());
                 cfor = result.size();
             }
-            Log.d(TAG, "mapping: Entrando a ciclo For con cfor = " + cfor);
+            Log.i(TAG, "mapping: Entrando a ciclo For con cfor = " + cfor);
             for (int i = 0; i < cfor; i++) {
                 points = new ArrayList();
                 List<HashMap<String, String>> path = result.get(i);
-                Log.d(TAG, "mapping: Entrando a ciclo For con path.size = " + path.size());
+                Log.i(TAG, "mapping: Entrando a ciclo For con path.size = " + path.size());
                 for (int j = 0; j < path.size(); j++) {
                     HashMap<String, String> point = path.get(j);
 
                     if(j==0){    // Get distance from the list
                         distance = point.get("distance");
-                        Log.d(TAG, "Calculando distancia: " + distance);
+                        Log.i(TAG, "Calculando distancia: " + distance);
                         continue;
                     }else if(j==1){ // Get duration from the list
                         duration = point.get("duration");
-                        Log.d(TAG, "Calculando duración: " + duration);
+                        Log.i(TAG, "Calculando duración: " + duration);
                         continue;
                     }
 
@@ -716,14 +751,14 @@ public class MapActivity extends FragmentActivity implements OnMapReadyCallback,
             }
             String[] distanceSplit = distance.split(" ");
             rDistance = Float.parseFloat(distanceSplit[0]);
-            Log.d(TAG, "mapping:\nDistancia: "+distance + ", Duración: "+duration);
+            Log.i(TAG, "mapping:\nDistancia: "+distance + ", Duración: "+duration);
             // Drawing polyline in the Google Map for the i-th route
             mMap.addPolyline(lineOptions);
         } catch (Exception e) {
             Toast.makeText(getApplicationContext(), "Error al generar enrutamiento. Verifica que ambos puntos sean alcanzables",  Toast.LENGTH_LONG).show();
             Log.e("Background Task", e.toString());
         }
-        Log.d(TAG, "mapping: Distance in meters: " + rDistance);
+        Log.i(TAG, "mapping: Distance in meters: " + rDistance);
     }
 
     private class DownloadTask extends AsyncTask<String, Void, String> {
@@ -736,14 +771,14 @@ public class MapActivity extends FragmentActivity implements OnMapReadyCallback,
             try {
                 data = downloadUrl(url[0]);
             } catch (Exception e) {
-                Log.d("Background Task", e.toString());
+                Log.i("Background Task", e.toString());
             }
             return data;
         }
 
         @Override
         protected void onPostExecute(String result) {
-            Log.d(TAG, "DownloadTask: onPostExecute: result: " + result);
+            Log.i(TAG, "DownloadTask: onPostExecute: result: " + result);
             super.onPostExecute(result);
 
             //ParserTask parserTask = new ParserTask();
@@ -800,7 +835,7 @@ public class MapActivity extends FragmentActivity implements OnMapReadyCallback,
             br.close();
 
         } catch (Exception e) {
-            Log.d("Exception", e.toString());
+            Log.i("Exception", e.toString());
         } finally {
             iStream.close();
             urlConnection.disconnect();
