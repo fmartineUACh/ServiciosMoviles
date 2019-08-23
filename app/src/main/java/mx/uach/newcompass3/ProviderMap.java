@@ -138,7 +138,7 @@ public class ProviderMap extends FragmentActivity implements OnMapReadyCallback,
             public void onItemClick(AdapterView<?> arg0, View arg1, int arg2, long arg3) {
                 activo = serviciosActivos.get(arg2);
                 String[] label;
-                label = getResources().getStringArray(R.array.slabels);
+                label = getResources().getStringArray(R.array.sLabels);
                 Toast.makeText(ProviderMap.this, "Item: " + label[activo.getService()], Toast.LENGTH_SHORT).show();
                 LatLng origin;
                 origin = new LatLng(activo.getOriginlat(), activo.getOriginlon());
@@ -411,7 +411,7 @@ public class ProviderMap extends FragmentActivity implements OnMapReadyCallback,
     };
 
     private void updateAdapter(){
-        String[] label = getResources().getStringArray(R.array.slabels);
+        String[] label = getResources().getStringArray(R.array.sLabels);
         adaptador.clear();
         Log.d(TAG, "updateAdapter: Actualizando adaptador.");
         float aDistance;

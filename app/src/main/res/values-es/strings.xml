@@ -20,9 +20,11 @@
     <string name="btn_accept">Aceptar solicitud</string>
     <string name="btn_cancel">Cancelar solicitud</string>
     <string name="request">Solicitar servicio</string>
-    <string name="requestSended">Solicitud enviada</string>
+    <string name="requestSent">Solicitud enviada</string>
 
-    <string-array name="slabels">
+    <string name="searchPlace">Busca un lugar</string>
+
+    <string-array name="sLabels">
         <item>Transporte personal</item>
         <item>Paquetería</item>
         <item>Pagar cuentas</item>

@@ -59,16 +59,16 @@
     <com.mancj.materialsearchbar.MaterialSearchBar
         style="@style/MaterialSearchBarLight"
         app:mt_speechMode="false"
-        app:mt_hint="Search a Place"
+        app:mt_hint="@string/searchPlace"
         app:mt_maxSuggestionsCount="10"
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
         android:id="@+id/searchBar"
         android:layout_margin="16dp"
-        app:mt_navIconEnabled="true"
+        app:mt_navIconEnabled="false"
         android:elevation="5dp"
         android:outlineProvider="bounds"
-        app:mt_placeholder="Search a Place"
+        app:mt_placeholder="@string/searchPlace"
     />
 
     <ImageView
@@ -93,19 +93,10 @@
         android:src="@drawable/ic_info" />
 
     <ImageView
-        android:id="@+id/ic_direction"
-        android:layout_width="40dp"
-        android:layout_height="40dp"
-        android:layout_alignStart="@+id/ic_add_origin"
-        android:layout_below="@+id/place_info"
-        android:layout_marginTop="17dp"
-        android:scaleType="centerCrop"
-        android:src="@drawable/ic_routing" />
-    <ImageView
         android:id="@+id/ic_add_origin"
         android:layout_width="40dp"
         android:layout_height="40dp"
-        android:layout_below="@+id/ic_direction"
+        android:layout_below="@+id/place_info"
         android:layout_alignStart="@id/place_info"
         android:layout_marginTop="15dp"
         android:src="@drawable/ic_origin"/>
