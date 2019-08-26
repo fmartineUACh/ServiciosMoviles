@@ -53,6 +53,11 @@
     <string name="rsBattery">Dead Battery</string>
     <!--OrderFood-->
     <string name="ofLabel">Please place your order.</string>
-    <string name="ofHelp">Place a food order by selecting a restaruant to place your order. By default, you rorder is delivered to your curent location but you can set a different delivering location.</string>
+    <string name="ofHelp">Place a food order by selecting a restaruant to place your order. By default, your order is delivered to your current location but you can set a different delivering location.</string>
 
+    <!--Place Info-->
+    <string name="address">Address: </string>
+    <string name="phone">Phone number: </string>
+    <string name="webSite">Web Site: </string>
+    <string name="rating">Rating: </string>
 </resources>

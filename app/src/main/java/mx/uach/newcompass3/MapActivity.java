@@ -73,6 +73,7 @@ import java.util.Calendar;
 import java.util.Date;
 import java.util.HashMap;
 import java.util.List;
+import java.util.Locale;
 import java.util.concurrent.ExecutionException;
 
 import mx.uach.newcompass3.Objects.FirebaseReferences;
@@ -96,13 +97,11 @@ public class MapActivity extends FragmentActivity implements OnMapReadyCallback,
     //Vars
     private Boolean mLocationPermissionGranted = false;
     private GoogleMap mMap;
-    private GoogleApiClient mGoogleApiClient;
     private PlacesClient placesClient;
     private List<AutocompletePrediction> predictionList;
     private Marker mMarker;
     private LatLng currentLatLng, originLatLng, destinationLatLng;
     private int spOption, travelWay;
-    private static String driver = "Test driver";
     private String cClient = "Test client";
     //Widgets
     private MaterialSearchBar materialSearchBar;
@@ -148,7 +147,9 @@ public class MapActivity extends FragmentActivity implements OnMapReadyCallback,
             Log.e(TAG, "onCreate: Permisos de ubicación denegados.");
         } else {
             LocationManager mLocationManager = (LocationManager) getSystemService(LOCATION_SERVICE);
-            mLocationManager.requestLocationUpdates(LocationManager.GPS_PROVIDER, 0, 2, mLocationListener);
+            if (mLocationManager != null) {
+                mLocationManager.requestLocationUpdates(LocationManager.GPS_PROVIDER, 0, 2, mLocationListener);
+            }
         }
 
         Places.initialize(MapActivity.this, MY_API_KEY);
@@ -415,7 +416,7 @@ public class MapActivity extends FragmentActivity implements OnMapReadyCallback,
                 }, 100);
                 mMap.clear();
                 if (spOption != 3) btnRequest.setVisibility(View.INVISIBLE);
-                moveCamera(currentLatLng, DEFAULT_ZOOM, getString(R.string.myLocation));
+                moveCamera(currentLatLng, getString(R.string.myLocation));
                 originLatLng = currentLatLng;
                 Toast.makeText(MapActivity.this, R.string.currentSet, Toast.LENGTH_SHORT).show();
             }
@@ -428,7 +429,7 @@ public class MapActivity extends FragmentActivity implements OnMapReadyCallback,
                 if (destinationLatLng != null) {
                     originLatLng = destinationLatLng;
                     mMap.clear();
-                    moveCamera(originLatLng, DEFAULT_ZOOM, "Origin");
+                    moveCamera(originLatLng, "Origin");
                     if (spOption != 3) btnRequest.setVisibility(View.INVISIBLE);
                     if (travelWay == 0) {
                         Toast.makeText(MapActivity.this, R.string.originSet, Toast.LENGTH_SHORT).show();
@@ -467,7 +468,7 @@ public class MapActivity extends FragmentActivity implements OnMapReadyCallback,
                 mMarker.hideInfoWindow();
             } else {
                 Log.i(TAG, "showInfo: Información del lugar: " + mMarker.getSnippet());
-                mMarker.showInfoWindow();
+                if (mMarker.getSnippet().length() > 0) mMarker.showInfoWindow();
             }
         } catch (NullPointerException e) {
             Log.e(TAG, "showInfo: NullPointerException: " + e.getMessage());
@@ -504,22 +505,22 @@ public class MapActivity extends FragmentActivity implements OnMapReadyCallback,
             if (mMarker == null) Log.i(TAG, "No marker to compare");
             else Log.i(TAG, "marker: " + marker.getId() + "\nmMarker: " + mMarker.getId());
             mMarker = marker;
-            moveCamera(mMarker.getPosition(), DEFAULT_ZOOM, mMarker.getTitle() != null ? mMarker.getTitle() : "");
-            mMarker.showInfoWindow();
+            moveCamera(mMarker.getPosition(), mMarker.getTitle() != null ? mMarker.getTitle() : "", 13f);
+            if (mMarker.getSnippet().length() > 0) mMarker.showInfoWindow();
         }
         return true;
     }
 
     private void sendRequestToDatabase() {
         Date cDate = Calendar.getInstance().getTime();
-        SimpleDateFormat df = new SimpleDateFormat("dd-MM-yyyy"), tf = new SimpleDateFormat("kk:mm:ss");
+        SimpleDateFormat df = new SimpleDateFormat("dd-MM-yyyy", Locale.getDefault()), tf = new SimpleDateFormat("kk:mm:ss", Locale.getDefault());
         DatabaseReference lastRef = activeRef.push();
         lastRef.setValue(new RequestingService(spOption, false,
                 originLatLng.latitude, originLatLng.longitude, destinationLatLng.latitude,
                 destinationLatLng.longitude, cClient, df.format(cDate), tf.format(cDate)));
         mMap.clear();
         btnRequest.setVisibility(View.INVISIBLE);
-        moveCamera(currentLatLng, DEFAULT_ZOOM, getString(R.string.myLocation));
+        moveCamera(currentLatLng, getString(R.string.myLocation));
         Toast.makeText(MapActivity.this, R.string.requestSent, Toast.LENGTH_SHORT).show();
         if (spOption == 3) {
             Intent receiveIntent = getIntent();
@@ -570,23 +571,25 @@ public class MapActivity extends FragmentActivity implements OnMapReadyCallback,
         try {
             if (mLocationPermissionGranted) {
                 Task location = mFusedLocationProviderClient.getLastLocation();
-                location.addOnCompleteListener(new OnCompleteListener() {
-                    @Override
-                    public void onComplete(@NonNull Task task) {
+                        location.addOnCompleteListener(new OnCompleteListener() {
+                            @Override
+                            public void onComplete(@NonNull Task task) {
                         if (task.isSuccessful()) {
                             Log.i(TAG, "onComplete: ¡Ubicación encontrada!");
                             Location currentLocation = (Location) task.getResult();
 
-                            currentLatLng = new LatLng(currentLocation.getLatitude(), currentLocation.getLongitude());
-                            originLatLng = currentLatLng;
-                            if (spOption == 3) {
-                                destinationLatLng = originLatLng;
-                                btnRequest.setVisibility(View.VISIBLE);
-                                Log.i(TAG, "Current coordinates:\n" + currentLatLng
-                                        + "\n" + originLatLng
-                                        + "\n" + destinationLatLng);
+                            if (currentLocation != null){
+                                currentLatLng = new LatLng(currentLocation.getLatitude(), currentLocation.getLongitude());
+                                originLatLng = currentLatLng;
+                                if (spOption == 3) {
+                                    destinationLatLng = originLatLng;
+                                    btnRequest.setVisibility(View.VISIBLE);
+                                    Log.i(TAG, "Current coordinates:\n" + currentLatLng
+                                            + "\n" + originLatLng
+                                            + "\n" + destinationLatLng);
+                                }
+                                moveCamera(currentLatLng, getString(R.string.myLocation));
                             }
-                            moveCamera(currentLatLng, DEFAULT_ZOOM, getString(R.string.myLocation));
                         } else {
                             Log.i(TAG, "onComplete: La ubicación actual es nula");
                             Toast.makeText(MapActivity.this, "Incapaz de conseguir ubicación actual", Toast.LENGTH_SHORT).show();
@@ -605,6 +608,7 @@ public class MapActivity extends FragmentActivity implements OnMapReadyCallback,
         try {
             MarkerOptions options = createMarkerOptions(placeInfo);
             mMarker = mMap.addMarker(options);
+            mMarker.showInfoWindow();
         } catch (NullPointerException e) {
             Log.e(TAG, "createMarker: NullPointerException: " + e.getMessage());
             return false;
@@ -619,14 +623,32 @@ public class MapActivity extends FragmentActivity implements OnMapReadyCallback,
     }
 
     private MarkerOptions createMarkerOptions(PlaceInfo placeInfo) {
-        String snippet = "Dirección: " + placeInfo.getAddress() + "\n" +
-                "Teléfono: " + placeInfo.getPhoneNumber() + "\n" +
-                "Sitio web: " + placeInfo.getWebsiteUri() + "\n" +
-                "Costo: " + placeInfo.getRating() + "\n";
+        String snippet = "";
+        if (placeInfo.getAddress() != null) snippet = snippet + getString(R.string.address) + " " + placeInfo.getAddress() + "\n";
+        if (placeInfo.getPhoneNumber() != null) snippet = snippet + getString(R.string.phone) + " " + placeInfo.getPhoneNumber() + "\n";
+        if (placeInfo.getWebsiteUri() != null) snippet = snippet + getString(R.string.webSite) + " " + placeInfo.getWebsiteUri() + "\n";
+        if (placeInfo.getRating() > 0) snippet = snippet + getString(R.string.rating) + " " + placeInfo.getRating() + "\n";
         return new MarkerOptions().position(placeInfo.getLatLng()).title(placeInfo.getName()).snippet(snippet);
     }
 
-    private void moveCamera(LatLng latLng, float zoom, String title) {
+    private void moveCamera(LatLng latLng, String title) {
+        Log.i(TAG, "moveCamera: Moviendo la cámara a:\nLat: " + latLng.latitude + "\nLng: " + latLng.longitude);
+        mMap.animateCamera(CameraUpdateFactory.newLatLngZoom(latLng, MapActivity.DEFAULT_ZOOM));
+
+        if (!title.equals(getString(R.string.myLocation))) {
+            MarkerOptions options = new MarkerOptions().position(latLng).title(title);
+            mMap.addMarker(options);
+        }
+        if (originLatLng != latLng) {
+            destinationLatLng = latLng;
+            Log.i(TAG, "moveCamera: Valor asigando a destinationLatLng: " + destinationLatLng);
+        } else {
+            Log.w(TAG, "moveCamera: Se ha intentado asignar el valor de origen al destino, pero ha sido evitado.");
+        }
+        hideSoftKeyboard();
+    }
+
+    private void moveCamera(LatLng latLng, String title, float zoom){
         Log.i(TAG, "moveCamera: Moviendo la cámara a:\nLat: " + latLng.latitude + "\nLng: " + latLng.longitude);
         mMap.animateCamera(CameraUpdateFactory.newLatLngZoom(latLng, zoom));
 
@@ -708,7 +730,8 @@ public class MapActivity extends FragmentActivity implements OnMapReadyCallback,
                 if (spOption != 3) btnRequest.setVisibility(View.INVISIBLE);
                 Marker marker;
                 marker = mMap.addMarker(new MarkerOptions().position(origin).title("Origin").icon(BitmapDescriptorFactory.defaultMarker(BitmapDescriptorFactory.HUE_AZURE)));
-                mMap.addMarker(new MarkerOptions().position(mMarker.getPosition()).title(mMarker.getTitle()).snippet(mMarker.getSnippet()));
+                mMarker = mMap.addMarker(new MarkerOptions().position(mMarker.getPosition()).title(mMarker.getTitle()).snippet(mMarker.getSnippet()));
+                if (mMarker.getSnippet().length() > 0) mMarker.showInfoWindow();
                 List<LatLng> latLngList = new ArrayList<>();
                 latLngList.add(marker.getPosition());
                 latLngList.add(mMarker.getPosition());
@@ -769,26 +792,24 @@ public class MapActivity extends FragmentActivity implements OnMapReadyCallback,
 
     private void mapping(List<List<HashMap<String, String>>> result) {
         Log.i(TAG, "mapping: mapping: Result: " + result);
-        ArrayList<LatLng> points;
         PolylineOptions lineOptions = new PolylineOptions();
         lineOptions.width(2);
         lineOptions.color(Color.BLUE);
         float rDistance = 0;
         String distance = "";
         String duration = "";
-        //MarkerOptions markerOptions = new MarkerOptions();
         try {
-            int cfor;
+            int cFor;
             if (result.size() == 0) {
                 Log.w(TAG, "mapping: result.size no tiene valor. Se asignará un valor de 1 para el ciclo.");
-                cfor = 1;
+                cFor = 1;
             } else {
                 Log.i(TAG, "mapping: result.size: " + result.size());
-                cfor = result.size();
+                cFor = result.size();
             }
-            Log.i(TAG, "mapping: Entrando a ciclo For con cfor = " + cfor);
-            for (int i = 0; i < cfor; i++) {
-                points = new ArrayList();
+            Log.i(TAG, "mapping: Entrando a ciclo For con cFor = " + cFor);
+            for (int i = 0; i < cFor; i++) {
+                ArrayList<LatLng> points = new ArrayList<>();
                 List<HashMap<String, String>> path = result.get(i);
                 Log.i(TAG, "mapping: Entrando a ciclo For con path.size = " + path.size());
                 for (int j = 0; j < path.size(); j++) {
@@ -829,7 +850,7 @@ public class MapActivity extends FragmentActivity implements OnMapReadyCallback,
         Log.i(TAG, "mapping: Distance in meters: " + rDistance);
     }
 
-    private class DownloadTask extends AsyncTask<String, Void, String> {
+    private static class DownloadTask extends AsyncTask<String, Void, String> {
 
         @Override
         protected String doInBackground(String... url) {
@@ -854,7 +875,7 @@ public class MapActivity extends FragmentActivity implements OnMapReadyCallback,
         }
     }
 
-    private String getDirectionsUrl(LatLng origin, LatLng dest) {
+    private static String getDirectionsUrl(LatLng origin, LatLng dest) {
 
         // Origin of route
         String str_origin = "origin=" + origin.latitude + "," + origin.longitude;
@@ -872,13 +893,11 @@ public class MapActivity extends FragmentActivity implements OnMapReadyCallback,
         String output = "json";
 
         // Building the url to the web service
-        String url = "https://maps.googleapis.com/maps/api/directions/"
+        return "https://maps.googleapis.com/maps/api/directions/"
                 + output + "?" + parameters + "&key=" + MY_API_KEY;
-
-        return url;
     }
 
-    private String downloadUrl(String strUrl) throws IOException {
+    private static String downloadUrl(String strUrl) throws IOException {
         String data = "";
         InputStream iStream = null;
         HttpURLConnection urlConnection = null;
@@ -893,7 +912,7 @@ public class MapActivity extends FragmentActivity implements OnMapReadyCallback,
 
             BufferedReader br = new BufferedReader(new InputStreamReader(iStream));
 
-            StringBuffer sb = new StringBuffer();
+            StringBuilder sb = new StringBuilder();
 
             String line;
             while ((line = br.readLine()) != null) {
@@ -907,8 +926,12 @@ public class MapActivity extends FragmentActivity implements OnMapReadyCallback,
         } catch (Exception e) {
             Log.i("Exception", e.toString());
         } finally {
-            iStream.close();
-            urlConnection.disconnect();
+            if (iStream != null) {
+                iStream.close();
+            }
+            if (urlConnection != null) {
+                urlConnection.disconnect();
+            }
         }
         return data;
     }

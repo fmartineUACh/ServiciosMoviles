@@ -54,4 +54,10 @@
     <!--OrderFood-->
     <string name="ofLabel">Por favor haga su pedido.</string>
     <string name="ofHelp">Recibe comida seleccionando el restaurante donde deseas ordenar. Por defecto tu orden se entrega en tu ubicación actual, pero puedes elegir un lugar distinto para entregar tu orden.</string>
+
+    <!--Place Info-->
+    <string name="address">Dirección: </string>
+    <string name="phone">Teléfono: </string>
+    <string name="webSite">Sitio Web: </string>
+    <string name="rating">Calificación: </string>
 </resources>
