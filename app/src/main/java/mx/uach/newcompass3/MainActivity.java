@@ -8,20 +8,19 @@ import android.view.View;
 import android.widget.AdapterView;
 import android.widget.ArrayAdapter;
 import android.widget.Button;
-import android.widget.CheckBox;
 import android.widget.EditText;
 import android.widget.RadioButton;
 import android.widget.Spinner;
 import android.widget.TextView;
 
 public class MainActivity extends AppCompatActivity implements AdapterView.OnItemSelectedListener {
-    private Button btnNext, btnProv;
+    private Button btnNext;
     private TextView help;
     private int spOption, travelWay = 0;
     //Layouts
     private ConstraintLayout clpar, clsupp, clfood;
     private RadioButton fromCurrent, fromMarker;
-    private CheckBox chFlatTire, chGas, chLeak, chBrake, chBatery;
+    private RadioButton rbFlatTire, rbGas, rbLeak, rbBrake, rbBatery;
     private EditText ofOrder;
 
     @Override
@@ -37,22 +36,21 @@ public class MainActivity extends AppCompatActivity implements AdapterView.OnIte
         // Apply the adapter to the spinner
         spservice.setAdapter(adapter);
         btnNext = findViewById(R.id.btnseguir);
-        btnProv = findViewById(R.id.btnprov);
         btnNext.setEnabled(false);
         help = findViewById(R.id.help);
         help.setEnabled(false);
         spservice.setOnItemSelectedListener(this);
         //Menús
-        clsupp = findViewById(R.id.clapoyo);
+        clsupp = findViewById(R.id.clApoyo);
         clpar = findViewById(R.id.clpaq);
         clfood = findViewById(R.id.clfood);
         fromCurrent = findViewById(R.id.fromCurrent);
         fromMarker = findViewById(R.id.fromMarker);
-        chBatery = findViewById(R.id.chbbateria);
-        chBrake = findViewById(R.id.chbfreno);
-        chLeak = findViewById(R.id.chbfuga);
-        chGas = findViewById(R.id.chbgas);
-        chFlatTire = findViewById(R.id.chbponche);
+        rbBatery = findViewById(R.id.rbBateria);
+        rbBrake = findViewById(R.id.rbFreno);
+        rbLeak = findViewById(R.id.rbFuga);
+        rbGas = findViewById(R.id.rbGas);
+        rbFlatTire = findViewById(R.id.rbPonche);
         ofOrder = findViewById(R.id.ofOrder);
     }
 
@@ -60,13 +58,13 @@ public class MainActivity extends AppCompatActivity implements AdapterView.OnIte
         Intent intent = new Intent(this, MapActivity.class);
         intent.putExtra("spOption", spOption);
         intent.putExtra("travelWay", travelWay);
-        /**Servicios viales*/
-        intent.putExtra("rsBatery", chBatery.isChecked());
-        intent.putExtra("rsBrake", chBrake.isChecked());
-        intent.putExtra("rsLeak", chLeak.isChecked());
-        intent.putExtra("rsGas", chGas.isChecked());
-        intent.putExtra("rsFlatTire", chFlatTire.isChecked());
-        /**Orden de comida*/
+        /*Servicios viales*/
+        intent.putExtra("rsBatery", rbBatery.isChecked());
+        intent.putExtra("rsBrake", rbBrake.isChecked());
+        intent.putExtra("rsLeak", rbLeak.isChecked());
+        intent.putExtra("rsGas", rbGas.isChecked());
+        intent.putExtra("rsFlatTire", rbFlatTire.isChecked());
+        /*Orden de comida*/
         intent.putExtra("fOrder", ofOrder.getText());
         startActivity(intent);
     }
@@ -83,7 +81,6 @@ public class MainActivity extends AppCompatActivity implements AdapterView.OnIte
         clsupp.setVisibility(View.GONE);
         clfood.setVisibility(View.GONE);
         help.setText(item);
-        //clcuentas.setVisibility(View.GONE);
         //Opciones de spinner
         switch (position){
             case 0:
