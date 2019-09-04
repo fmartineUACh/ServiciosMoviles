@@ -15,7 +15,7 @@ import android.widget.Spinner;
 import android.widget.TextView;
 
 public class MainActivity extends AppCompatActivity implements AdapterView.OnItemSelectedListener {
-    private Button btnnext, btnProv;
+    private Button btnNext, btnProv;
     private TextView help;
     private int spOption, travelWay = 0;
     //Layouts
@@ -36,9 +36,9 @@ public class MainActivity extends AppCompatActivity implements AdapterView.OnIte
         adapter.setDropDownViewResource(android.R.layout.simple_spinner_dropdown_item);
         // Apply the adapter to the spinner
         spservice.setAdapter(adapter);
-        btnnext = findViewById(R.id.btnseguir);
+        btnNext = findViewById(R.id.btnseguir);
         btnProv = findViewById(R.id.btnprov);
-        btnnext.setEnabled(false);
+        btnNext.setEnabled(false);
         help = findViewById(R.id.help);
         help.setEnabled(false);
         spservice.setOnItemSelectedListener(this);
@@ -117,7 +117,7 @@ public class MainActivity extends AppCompatActivity implements AdapterView.OnIte
                 help.setText(R.string.ofHelp);
                 break;
         }
-        btnnext.setEnabled(true);
+        btnNext.setEnabled(true);
     }
 
     @Override
