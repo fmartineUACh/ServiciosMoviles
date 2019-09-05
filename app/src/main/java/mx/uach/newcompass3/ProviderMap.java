@@ -62,6 +62,7 @@ import java.util.Calendar;
 import java.util.Date;
 import java.util.HashMap;
 import java.util.List;
+import java.util.Locale;
 import java.util.Objects;
 import java.util.concurrent.ExecutionException;
 import java.util.concurrent.TimeUnit;
@@ -85,7 +86,7 @@ public class ProviderMap extends FragmentActivity implements OnMapReadyCallback,
     private Boolean mLocationPermissionGranted = false, drawing = true;
     private GoogleMap mMap;
     private LatLng currentLatLng, originLatLng, destinationLatLng;
-    private List<ActiveService> serviciosActivos = new ArrayList<ActiveService>();
+    private List<ActiveService> serviciosActivos = new ArrayList<>();
     private List<RoadSupport> asistenciaVialRef = new ArrayList<>();
     private ActiveService activo;
     private RoadSupport rsActivo;
@@ -100,7 +101,6 @@ public class ProviderMap extends FragmentActivity implements OnMapReadyCallback,
     private ImageView mGps;
     private TextView txtDetails;
     private Button btnAccept, btnCancel, btnRelease;
-    private ArrayList markerPoints = new ArrayList();
     private ListView listView;
     private DrawerLayout drawerLayout;
     private FirebaseDatabase database = FirebaseDatabase.getInstance();
@@ -147,16 +147,21 @@ public class ProviderMap extends FragmentActivity implements OnMapReadyCallback,
                 det = det.substring(0, ll);
                 txtDetails.setText(det);
                 drawing = true;
+                LatLng destination = new LatLng(activo.getDestinationlat(), activo.getDestinationlon());
                 if (activo.getService() != 3) {
-                    LatLng destination = new LatLng(activo.getDestinationlat(), activo.getDestinationlon());
                     routing(origin, destination);
                     rsActivo = null;
                 }else{
                     rsActivo = asistenciaVialRef.get(activo.getRoadSupportIndex());
                     MarkerOptions options = new MarkerOptions().position(origin).title(label[3]);
                     mMap.clear();
-                    mMap.addMarker(options);
-                    moveCamera(origin, label[3]);
+                    if (origin == destination) {
+                        mMap.addMarker(options);
+                        moveCamera(origin, label[3]);
+                    }else{
+                        routing(origin, destination);
+                        rsActivo = null;
+                    }
                 }
                 drawerLayout.closeDrawers();
                 btnAccept.setVisibility(View.VISIBLE);
@@ -321,7 +326,7 @@ public class ProviderMap extends FragmentActivity implements OnMapReadyCallback,
     private void locationUpdate() {
         DatabaseReference locationReference = database.getReference(FirebaseReferences.ACTIVESERVICES_REFERENCE).child(activo.getKey()).child(FirebaseReferences.LOCATIONUPDATE_REFERENCE);
         Date cDate = Calendar.getInstance().getTime();
-        SimpleDateFormat tf = new SimpleDateFormat("kk:mm:ss");
+        SimpleDateFormat tf = new SimpleDateFormat("kk:mm:ss", Locale.getDefault());
         LocationTracking lt = new LocationTracking(tf.format(cDate), currentLatLng.latitude, currentLatLng.longitude);
         if (lCount > 0){
             long diffInMs = cDate.getTime() - lastTime.getTime();
@@ -385,7 +390,7 @@ public class ProviderMap extends FragmentActivity implements OnMapReadyCallback,
                 location1.setLatitude(currentLatLng.longitude);
                 location2.setLatitude(destinationLatLng.latitude);
                 location2.setLatitude(destinationLatLng.longitude);
-                if (activo.getService() == 3){
+                if (originLatLng == destinationLatLng){
                     btnRelease.setVisibility(View.VISIBLE);
                 }
                 if(location1.distanceTo(location2) < 20 && activo.getService() != 3){
@@ -476,7 +481,7 @@ public class ProviderMap extends FragmentActivity implements OnMapReadyCallback,
             rDistance = rDistance * 1000;
         }
         Date cDate = Calendar.getInstance().getTime();
-        SimpleDateFormat tf = new SimpleDateFormat("kk:mm:ss");
+        SimpleDateFormat tf = new SimpleDateFormat("kk:mm:ss", Locale.getDefault());
         String cClient = "Test client";
         DatabaseReference nRel = releasedRef.push();
         nRel.setValue(new ReleasedService(activo.getService(),
@@ -525,7 +530,6 @@ public class ProviderMap extends FragmentActivity implements OnMapReadyCallback,
         Log.d(TAG, "onMapReady: Mapa listo");
         Toast.makeText(this, R.string.mapReady, Toast.LENGTH_SHORT).show();
         mMap = googleMap;
-        markerPoints.clear();
         if (mLocationPermissionGranted) {
             if (ActivityCompat.checkSelfPermission(this, Manifest.permission.ACCESS_FINE_LOCATION)
                     != PackageManager.PERMISSION_GRANTED && ActivityCompat.checkSelfPermission(this,
@@ -586,7 +590,6 @@ public class ProviderMap extends FragmentActivity implements OnMapReadyCallback,
         if(!title.equals(getString(R.string.myLocation))) {
             MarkerOptions options = new MarkerOptions().position(latLng).title(title);
             mMap.clear();
-            markerPoints.clear();
             mMap.addMarker(options);
         }
         if(originLatLng != latLng) {
