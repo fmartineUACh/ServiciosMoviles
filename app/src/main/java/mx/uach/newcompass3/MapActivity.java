@@ -473,7 +473,7 @@ public class MapActivity extends FragmentActivity implements OnMapReadyCallback,
                         @Override
                         public void run() {
                             Log.i(TAG, "Sending request to database\n Origin: " + originLatLng + "\nDestination: " + destinationLatLng);
-                            //sendRequestToDatabase();
+                            sendRequestToDatabase();
                         }
                     }, 11000);
                 }
@@ -528,13 +528,13 @@ public class MapActivity extends FragmentActivity implements OnMapReadyCallback,
                     receiveIntent.getBooleanExtra("rsBrake", false),
                     receiveIntent.getBooleanExtra("rsBattery", false));
             String serviceSearch;
+            way = true;
             if (rs.getNoGas()) {
                 serviceSearch = "Gasolinera";
             } else if (rs.getDeflatedTire()){
                 serviceSearch = "Desponchado";
             }else {
                 serviceSearch = "Ferretería";
-                way = true;
             }
             RectangularBounds bounds = RectangularBounds.newInstance(new LatLng(originLatLng.latitude - margin, originLatLng.longitude - margin),
                     new LatLng(originLatLng.latitude + margin, originLatLng.longitude + margin));
