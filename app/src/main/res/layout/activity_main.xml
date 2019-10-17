@@ -22,7 +22,7 @@
         android:layout_height="39dp"
         android:layout_marginStart="10dp"
         android:layout_marginTop="8dp"
-        android:entries="@array/slabels"
+        android:entries="@array/sLabels"
         app:layout_constraintStart_toStartOf="parent"
         app:layout_constraintTop_toBottomOf="@+id/textView" />
 
@@ -59,7 +59,7 @@
         app:layout_goneMarginEnd="10dp" />
 
     <android.support.constraint.ConstraintLayout
-        android:id="@+id/clapoyo"
+        android:id="@+id/clApoyo"
         android:layout_width="0dp"
         android:layout_height="352dp"
         android:layout_marginEnd="10dp"
@@ -81,51 +81,49 @@
             app:layout_constraintStart_toStartOf="parent"
             app:layout_constraintTop_toTopOf="parent" />
 
-        <CheckBox
-            android:id="@+id/chbponche"
+        <RadioGroup
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
             android:layout_marginStart="16dp"
-            android:layout_marginTop="12dp"
-            android:text="@string/rsDeflatedTire"
+            android:layout_marginTop="8dp"
             app:layout_constraintStart_toStartOf="parent"
-            app:layout_constraintTop_toBottomOf="@+id/lbvial" />
+            app:layout_constraintTop_toBottomOf="@+id/lbvial">
 
-        <CheckBox
-            android:id="@+id/chbgas"
-            android:layout_width="wrap_content"
-            android:layout_height="wrap_content"
-            android:layout_marginTop="12dp"
-            android:text="@string/rsNoGas"
-            app:layout_constraintStart_toStartOf="@+id/chbponche"
-            app:layout_constraintTop_toBottomOf="@+id/chbponche" />
+            <RadioButton
+                android:id="@+id/rbPonche"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:layout_marginTop="12dp"
+                android:text="@string/rsDeflatedTire" />
 
-        <CheckBox
-            android:id="@+id/chbfuga"
-            android:layout_width="wrap_content"
-            android:layout_height="wrap_content"
-            android:layout_marginTop="12dp"
-            android:text="@string/rsLeak"
-            app:layout_constraintStart_toStartOf="@+id/chbgas"
-            app:layout_constraintTop_toBottomOf="@+id/chbgas" />
+            <RadioButton
+                android:id="@+id/rbGas"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:layout_marginTop="12dp"
+                android:text="@string/rsNoGas" />
 
-        <CheckBox
-            android:id="@+id/chbfreno"
-            android:layout_width="wrap_content"
-            android:layout_height="wrap_content"
-            android:layout_marginTop="12dp"
-            android:text="@string/rsBrakeFail"
-            app:layout_constraintStart_toStartOf="@+id/chbfuga"
-            app:layout_constraintTop_toBottomOf="@+id/chbfuga" />
+            <RadioButton
+                android:id="@+id/rbFuga"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:layout_marginTop="12dp"
+                android:text="@string/rsLeak" />
 
-        <CheckBox
-            android:id="@+id/chbbateria"
-            android:layout_width="wrap_content"
-            android:layout_height="wrap_content"
-            android:layout_marginTop="12dp"
-            android:text="@string/rsBattery"
-            app:layout_constraintStart_toStartOf="@+id/chbfreno"
-            app:layout_constraintTop_toBottomOf="@+id/chbfreno" />
+            <RadioButton
+                android:id="@+id/rbFreno"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:layout_marginTop="12dp"
+                android:text="@string/rsBrakeFail" />
+
+            <RadioButton
+                android:id="@+id/rbBateria"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:layout_marginTop="12dp"
+                android:text="@string/rsBattery" />
+        </RadioGroup>
     </android.support.constraint.ConstraintLayout>
 
     <android.support.constraint.ConstraintLayout

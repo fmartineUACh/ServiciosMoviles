@@ -5,7 +5,7 @@
     <string name="SearchHint">Enter Address</string>
     <string name="route">Create route to this place</string>
     <string name="routeError">Error generating routing. Verify that both points are reachable</string>
-    <string name="noRouteData">2 points are necesary to create a route</string>
+    <string name="noRouteData">2 points are necessary to create a route</string>
     <string name="next">Next</string>
     <string name="choseService">Chose your service:</string>
     <string name="serviceOptions">How can we help you?</string>
@@ -20,9 +20,11 @@
     <string name="myLocation">Current location</string>
     <string name="aDistance">Distance: </string>
     <string name="request">Request Service</string>
-    <string name="requestSended">Request Sended</string>
+    <string name="requestSent">Request Sent</string>
 
-    <string-array name="slabels">
+    <string name="searchPlace">Search a Place</string>
+
+    <string-array name="sLabels">
         <item>Personal transport</item>
         <item>Parcel Service</item>
         <item>Pay bills</item>
@@ -51,6 +53,11 @@
     <string name="rsBattery">Dead Battery</string>
     <!--OrderFood-->
     <string name="ofLabel">Please place your order.</string>
-    <string name="ofHelp">Place a food order by selecting a restaruant to place your order. By default, you rorder is delivered to your curent location but you can set a different delivering location.</string>
+    <string name="ofHelp">Place a food order by selecting a restaruant to place your order. By default, your order is delivered to your current location but you can set a different delivering location.</string>
 
+    <!--Place Info-->
+    <string name="address">Address: </string>
+    <string name="phone">Phone number: </string>
+    <string name="webSite">Web Site: </string>
+    <string name="rating">Rating: </string>
 </resources>

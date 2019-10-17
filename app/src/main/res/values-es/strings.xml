@@ -20,9 +20,11 @@
     <string name="btn_accept">Aceptar solicitud</string>
     <string name="btn_cancel">Cancelar solicitud</string>
     <string name="request">Solicitar servicio</string>
-    <string name="requestSended">Solicitud enviada</string>
+    <string name="requestSent">Solicitud enviada</string>
 
-    <string-array name="slabels">
+    <string name="searchPlace">Busca un lugar</string>
+
+    <string-array name="sLabels">
         <item>Transporte personal</item>
         <item>Paquetería</item>
         <item>Pagar cuentas</item>
@@ -52,4 +54,10 @@
     <!--OrderFood-->
     <string name="ofLabel">Por favor haga su pedido.</string>
     <string name="ofHelp">Recibe comida seleccionando el restaurante donde deseas ordenar. Por defecto tu orden se entrega en tu ubicación actual, pero puedes elegir un lugar distinto para entregar tu orden.</string>
+
+    <!--Place Info-->
+    <string name="address">Dirección: </string>
+    <string name="phone">Teléfono: </string>
+    <string name="webSite">Sitio Web: </string>
+    <string name="rating">Calificación: </string>
 </resources>
